@@ -1,0 +1,87 @@
+/* QAssurify Professional Theme - Navy/Silver/White */
+:root {
+  --navy: #0A1F44;
+  --royal: #1E3A8A;
+  --silver: #B0BEC5;
+  --slate: #4B5563;
+  --white: #FFFFFF;
+}
+
+html, body { height: 100%; background: var(--white); color: var(--navy); font-family: 'Inter', 'Segoe UI', Roboto, Arial, sans-serif; }
+
+.qs-container { max-width: 1400px; margin: 0 auto; padding: 16px 24px; }
+
+.qs-header { background: var(--navy); color: var(--white); border-radius: 16px; padding: 40px 32px; box-shadow: 0 8px 30px rgba(10,31,68,0.15); }
+.qs-title { font-size: 32px; font-weight: 800; letter-spacing: 0.3px; }
+.qs-tagline { margin-top: 6px; color: #E6EDF5; }
+.qs-cta { margin-top: 20px; }
+.qs-btn-primary { background: var(--royal); color: var(--white); border: none; padding: 12px 18px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: transform .12s ease, box-shadow .12s ease, opacity .2s; box-shadow: 0 8px 24px rgba(30,58,138,0.25); }
+.qs-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(30,58,138,0.3); }
+
+.qs-grid { display: grid; gap: 16px; }
+.qs-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.qs-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.qs-card { background: var(--white); border: 1px solid rgba(176,190,197,0.6); border-radius: 16px; box-shadow: 0 8px 30px rgba(10,31,68,0.06); padding: 16px; }
+.qs-card h3 { margin: 0 0 10px; font-size: 16px; color: var(--slate); font-weight: 700; }
+.qs-kpi { display: flex; align-items: baseline; gap: 10px; }
+.qs-kpi .num { font-size: 28px; font-weight: 800; color: var(--navy); }
+.qs-kpi .label { color: var(--slate); font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; }
+
+.stats-number { font-size: 28px !important; margin-bottom: 6px; }
+.stats-label { font-size: 12px !important; }
+@media (min-width: 992px) {
+  /* Force 4 KPI cards in one row */
+  #statsSection .col-lg-3 { width: 25% !important; max-width: 25% !important; flex: 0 0 25% !important; }
+}
+
+.qs-table { width: 100%; border-collapse: collapse; }
+.qs-table th, .qs-table td { padding: 10px 12px; border-bottom: 1px solid rgba(176,190,197,0.5); text-align: left; }
+.qs-table th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--slate); }
+.qs-table tbody tr:hover { background: #F8FAFC; }
+
+.qs-badge { display: inline-flex; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.qs-badge.low { background: #E3F2FD; color: #0D47A1; }
+.qs-badge.medium { background: #FFF3E0; color: #E65100; }
+.qs-badge.high { background: #FFEBEE; color: #B71C1C; }
+.qs-badge.critical { background: #FCE4EC; color: #880E4F; }
+
+.qs-sidebar { width: 240px; background: var(--white); border-right: 1px solid rgba(176,190,197,0.6); position: sticky; top: 0; height: 100vh; padding: 24px 16px; }
+.qs-nav a { display: block; color: var(--slate); padding: 10px 12px; border-radius: 10px; text-decoration: none; font-weight: 600; }
+.qs-nav a:hover, .qs-nav a.active { background: rgba(30,58,138,0.08); color: var(--royal); }
+
+.qs-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.qs-content { padding: 24px; }
+
+.qs-section-title { font-weight: 800; font-size: 18px; margin-bottom: 12px; color: var(--navy); }
+
+.qs-footer { margin-top: 24px; color: var(--slate); font-size: 12px; text-align: center; }
+
+@media (max-width: 992px) {
+  .qs-layout { grid-template-columns: 1fr; }
+  .qs-sidebar { position: relative; width: 100%; height: auto; }
+}
+
+/* Compact charts - fixed height to ensure visibility */
+.chart-container.compact { height: 220px; min-height: 220px; }
+canvas { width: 100% !important; height: 100% !important; }
+
+/* Tighten card spacing globally for a space-saving vertical layout */
+.card { margin-bottom: 12px; }
+.main-container { padding: 20px; }
+.row.g-3 { --bs-gutter-x: .5rem; --bs-gutter-y: .5rem; }
+
+/* Charts: keep visible and side-by-side on large screens */
+.chart-container.compact { height: 300px; min-height: 300px; }
+@media (min-width: 992px) {
+  #rateSection .col-lg-6 { width: 50% !important; max-width: 50% !important; flex: 0 0 50% !important; }
+}
+
+/* Compact header controls */
+.card-header .form-control, .card-header .form-select { min-width: 180px; }
+.card-header .btn { white-space: nowrap; }
+
+/* Space-saving table text */
+table.table.table-sm td small { color: #6b7280; }
+
+

@@ -13,24 +13,38 @@
             --red:#E43636;--cream:#F6EFD2;--beige:#E2DDB4;--black:#000;
         }
         html, body{width:100%}
-        body{background:var(--cream);color:var(--black);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;overflow-x:hidden}
+        body{
+            background:
+                radial-gradient(1200px 600px at 100% -20%, rgba(228,54,54,.06), transparent 60%),
+                radial-gradient(900px 500px at -10% 110%, rgba(226,221,180,.25), transparent 60%),
+                linear-gradient(180deg, var(--cream), #fff);
+            color:var(--black);
+            font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+            margin:0;overflow-x:hidden
+        }
         .container{width:min(100vw,1400px);margin-inline:auto;padding:12px 40px}
         @media(min-width:1280px){.container{padding:12px 56px}}
         /* Pinned side navigation */
-        .side-nav{position:fixed;top:60px;left:0;height:calc(100vh - 60px);width:220px;background:#fff;border-right:1px solid var(--beige);box-shadow:0 6px 20px rgba(0,0,0,.06);padding:10px;z-index:5;transform:translateX(0);transition:transform .25s ease}
-        .side-nav.collapsed{transform:translateX(-180px)}
+        .side-nav{position:fixed;top:60px;left:0;height:calc(100vh - 60px);width:220px;background:#fff;border-right:1px solid var(--beige);box-shadow:0 6px 20px rgba(0,0,0,.06);padding:12px;border-top-right-radius:12px;border-bottom-right-radius:12px;z-index:5;transform:translateX(0);transition:transform .28s ease}
+        .side-nav.collapsed{transform:translateX(-230px)}
         .side-nav .toggle{position:absolute;right:-14px;top:10px;background:#fff;border:1px solid var(--beige);border-radius:20px;padding:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-        .side-nav h4{margin:6px 0 6px 0;font-size:13px}
-        .side-nav a{display:block;padding:6px 8px;border-radius:8px;color:#000;text-decoration:none;font-size:13px}
-        .side-nav a:hover{background:#faf8ef}
+        .side-nav h4{margin:6px 0 10px 0;font-size:12px;color:#555;text-transform:uppercase;letter-spacing:.04em}
+        .side-nav a{display:block;padding:8px 10px;border-radius:10px;color:#000;text-decoration:none;font-size:13px;border:1px solid transparent}
+        .side-nav a:hover{background:#faf8ef;border-color:var(--beige)}
+        .side-nav hr{border:none;border-top:1px dashed var(--beige);margin:10px 0}
         .side-nav .sub{padding-left:10px}
-        .with-sidenav{padding-left:250px;transition:padding-left .25s ease}
-        .header-offset{padding-left:250px;transition:padding-left .25s ease}
+        .with-sidenav{padding-left:250px;transition:padding-left .28s ease}
+        .header-offset{padding-left:250px;transition:padding-left .28s ease}
         @media(max-width:960px){.side-nav{top:56px;width:200px}.with-sidenav{padding-left:0}.side-nav.collapsed{transform:translateX(-200px)}}
         header{position:sticky;top:0;z-index:10;background:var(--cream);display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px}
-        .brand{display:flex;gap:12px;align-items:center}
+        .brand{display:flex;gap:12px;align-items:center;flex:1;min-width:0}
         .logo{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--red),#b32020);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
-        .title{font-size:20px;font-weight:700}
+        .title{font-size:20px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        /* Header hamburger */
+        .hamburger-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid var(--beige);border-radius:10px;background:#fff;cursor:pointer;margin-right:10px}
+        .hamburger-btn:hover{background:#faf8ef}
+        .hamburger-lines{display:inline-block;width:16px}
+        .hamburger-lines span{display:block;height:2px;background:#000;margin:3px 0;border-radius:2px}
         .grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start}
         .grid.single{grid-template-columns:1fr;justify-items:center}
         @media(max-width:960px){.grid{grid-template-columns:1fr}}
@@ -75,6 +89,11 @@
         .callout{background:#fff;border:1px solid var(--beige);border-radius:10px;padding:10px;font-size:12px;color:#333}
         .section-title{font-weight:700;margin:8px 0 4px 0}
         .tested-title{text-align:center}
+        /* Nav button styling */
+        .nav-btn{display:inline-block;background:#fff;border:1px solid var(--beige);color:#000;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:600;margin-left:8px}
+        .nav-btn:hover{background:#faf8ef}
+        .nav-btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+        .top-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;white-space:nowrap}
         .kv-table{width:100%;border-collapse:collapse}
         .kv-table{table-layout:fixed}
         .kv-table td{border-bottom:1px solid var(--beige);padding:6px 8px;font-size:12px;word-break:break-word;white-space:normal}
@@ -97,6 +116,8 @@
         /* Constrain Tested Data section */
         #testedDataWrap{max-width:100%;max-height:50vh;overflow:auto}
         #testedDataTables{max-width:100%;overflow:auto}
+        /* Downloads row visibility */
+        #downloadsRow{display:none}
     </style>
     <script>
         try { if (window.Chart && window.Chart.register) { Chart.register(ChartDataLabels); } } catch (e) {}
@@ -165,11 +186,13 @@
             const areaEl = document.getElementById('resultsArea');
             if(s.running){
                 if(areaEl) areaEl.style.display = 'none';
+                const dl = document.getElementById('downloadsRow'); if(dl) dl.style.display = 'none';
             } else if(!s.running && allRows.length > 0){
                 clearInterval(poller);
                 document.getElementById('runBtn').disabled=false;
                 refreshReports();
                 if(areaEl) areaEl.style.display = 'block';
+                const dl = document.getElementById('downloadsRow'); if(dl) dl.style.display = 'flex';
                 // ensure charts/results stack under the testing section
                 const grid = document.querySelector('.grid');
                 if(grid) grid.classList.add('single');
@@ -637,14 +660,45 @@
                     main.classList.remove('with-sidenav');
                     if(headerEl) headerEl.classList.remove('header-offset');
                 }
+                // Keep title from shifting by reserving space for actions
+                try{
+                    const brand = document.querySelector('.brand');
+                    const actions = document.querySelector('.top-actions');
+                    if(brand && actions){
+                        // Ensure actions remain aligned and visible
+                        actions.style.maxWidth = '100%';
+                    }
+                }catch(e){}
             };
             if(toggle){
                 toggle.addEventListener('click',()=>{
                     nav.classList.toggle('collapsed');
                     setMainPadding();
+                    // sync header hamburger visibility
+                    updateHeaderHamburgerVisibility();
                 });
             }
+            // Header hamburger should control the same sidebar
+            const headerToggle = document.getElementById('headerNavToggle');
+            if(headerToggle){
+                headerToggle.addEventListener('click',()=>{
+                    if(nav){ nav.classList.toggle('collapsed'); }
+                    setMainPadding();
+                    updateHeaderHamburgerVisibility();
+                });
+            }
+            // Helper toggler for header hamburger (hide when nav is open)
+            function updateHeaderHamburgerVisibility(){
+                try{
+                    const isCollapsed = nav && nav.classList.contains('collapsed');
+                    if(headerToggle){
+                        if(isCollapsed){ headerToggle.classList.remove('hidden'); }
+                        else { headerToggle.classList.add('hidden'); }
+                    }
+                }catch(e){}
+            }
             setMainPadding();
+            updateHeaderHamburgerVisibility();
 
             // Position sidebar below sticky header exactly
             const header = document.querySelector('header');
@@ -669,23 +723,26 @@
     <div class="side-nav collapsed" id="sideNav">
         <button class="toggle" id="navToggle" title="Show/Hide navigation">☰</button>
         <h4>Navigate</h4>
-        <a href="#" onclick="navGo('testingSection')">1. Testing</a>
-        <a href="#" onclick="navGo('resultsOverview')">2. Results Overview</a>
-        <a href="#" onclick="navGo('latestResults')">3. Latest Results</a>
-        <a href="#" onclick="navGo('testedDataCard')">4. Tested Data</a>
-        <hr style="border:none;border-top:1px solid var(--beige);margin:8px 0"/>
-        <a href="#" onclick="exportAllDoc()">5. Download All</a>
+        <a href="#" onclick="navGo('testingSection')">Testing</a>
+        <a href="#" onclick="navGo('resultsOverview')">Results Overview</a>
+        <a href="#" onclick="navGo('latestResults')">Latest Results</a>
+        <a href="#" onclick="navGo('testedDataCard')">Tested Data</a>
+        <hr/>
+        <a href="#" onclick="exportAllDoc()">Download All</a>
     </div>
     <div class="container" id="mainContainer">
         <header>
             <div class="brand">
+                <button id="headerNavToggle" class="hamburger-btn" title="Show/Hide navigation" aria-label="Toggle navigation">
+                    <span class="hamburger-lines"><span></span><span></span><span></span></span>
+                </button>
                 <div class="logo">QA</div>
                 <div class="title">QAssurify — Quality Assurance Command Center</div>
             </div>
-            <nav>
-                <a href="/" class="secondary" style="text-decoration:none; padding:8px 12px; border-radius:8px">Dashboard</a>
-                <a href="/history" class="secondary" style="text-decoration:none; padding:8px 12px; border-radius:8px">History</a>
-                <a href="/insights" class="secondary" style="text-decoration:none; padding:8px 12px; border-radius:8px">Insights</a>
+            <nav class="top-actions">
+                <a href="/" class="nav-btn primary">Dashboard</a>
+                <a href="/history" class="nav-btn">History</a>
+                <a href="/insights" class="nav-btn">Insights</a>
             </nav>
         </header>
 
@@ -723,13 +780,7 @@
                                 <label title="Include lightweight security probes for common issues like XSS/SQL injection payloads."><input id="optSecurity" type="checkbox" /> Security tests</label>
                             </div>
                         </div>
-                        <div>
-                            <label title="Export the current results to a file.">Downloads</label>
-                            <div style="display:flex; gap:8px; align-items:center;">
-                                <button class="secondary" title="Export results as a comma-separated values file" onclick="exportResults('csv')">Download CSV</button>
-                                <button class="secondary" title="Export results as an Excel workbook" onclick="exportResults('excel')">Download Excel</button>
-                            </div>
-                        </div>
+                        <!-- Downloads moved below progress and shown after run finishes -->
                     </div>
                     <div class="actions" style="flex-wrap:wrap">
                         <button id="runBtn" class="primary" title="Begin the selected test run" onclick="startRun()">Start Tests</button>
@@ -748,6 +799,10 @@
                     <div class="section">
                         <div class="progress" title="Overall test progress"><div class="bar"></div></div>
                         <div class="muted" id="progressText" style="margin-top:6px" title="Completion percentage">0%</div>
+                        <div id="downloadsRow" style="display:flex; gap:8px; align-items:center; margin-top:8px">
+                            <button class="secondary" title="Export results as a comma-separated values file" onclick="exportResults('csv')">Download CSV</button>
+                            <button class="secondary" title="Export results as an Excel workbook" onclick="exportResults('excel')">Download Excel</button>
+                        </div>
                     </div>
 
                     <div class="section kpis">
@@ -839,7 +894,11 @@
             </div>
         </div>
     </div>
+    <footer style="text-align:center; margin:16px 0; font-size:12px; color:#555">
+        © 2025 Kinjal Luhar • <a href="mailto:kinjal96luhar@gmail.com" class="link">kinjal96luhar@gmail.com</a>
+    </footer>
 </body>
 </html>
+
 
 

@@ -19,6 +19,10 @@
         .muted{color:#555;font-size:12px}
         .file{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--beige)}
         .file a{color:#000;text-decoration:none}
+        /* Nav button styling */
+        .nav-btn{display:inline-block;background:#fff;border:1px solid var(--beige);color:#000;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:600;margin-left:8px}
+        .nav-btn:hover{background:#faf8ef}
+        .nav-btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
     </style>
     <script>
         async function getJSON(url){const r = await fetch(url);return r.json();}
@@ -40,9 +44,9 @@
                 <div class="title">QAssurify — History</div>
             </div>
             <nav>
-                <a href="/" class="secondary" style="text-decoration:none; padding:8px 12px; border-radius:8px">Dashboard</a>
-                <a href="/history" class="secondary" style="text-decoration:none; padding:8px 12px; border-radius:8px">History</a>
-                <a href="/insights" class="secondary" style="text-decoration:none; padding:8px 12px; border-radius:8px">Insights</a>
+                <a href="/" class="nav-btn">Dashboard</a>
+                <a href="/history" class="nav-btn primary">History</a>
+                <a href="/insights" class="nav-btn">Insights</a>
             </nav>
         </header>
 
@@ -57,6 +61,9 @@
             </div>
         </div>
     </div>
+    <footer style="text-align:center; margin:16px 0; font-size:12px; color:#555">
+        © 2025 Kinjal Luhar • <a href="mailto:kinjal96luhar@gmail.com" class="link">kinjal96luhar@gmail.com</a>
+    </footer>
 </body>
 </html>
 

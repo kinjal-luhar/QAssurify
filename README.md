@@ -1,6 +1,6 @@
-# Strict QA Agent (CLI Only)
+# Strict QA Agent — CLI and Web UI
 
-A comprehensive, automated QA testing framework for web applications, now focused on a CLI-only workflow. The Strict QA Agent acts like a real QA tester but with stricter validation and automated execution.
+A comprehensive, automated QA testing framework for web applications. You can run it via the Command Line (CLI) or from a lightweight Web UI. The agent acts like a real QA tester with strict validation and automated execution.
 
 ## 🎯 Features
 
@@ -14,43 +14,54 @@ A comprehensive, automated QA testing framework for web applications, now focuse
 ## 📁 Project Structure
 
 ```
-qa_agent/
-├── main.py                 # Entry point - runs all tests
-├── requirements.txt        # Python dependencies
-├── tests/                  # Test modules
+.
+├── app.py                 # Web UI server (Flask)
+├── main.py                # CLI entry point - runs all tests
+├── requirements.txt       # Python dependencies
+├── templates/             # UI templates (dashboard, results, tested data)
+├── static/                # UI assets (CSS)
+├── tests/                 # Test modules
 │   ├── test_signup.py     # Signup form tests
 │   ├── test_login.py      # Login functionality tests
 │   ├── test_navigation.py # Page navigation tests
 │   ├── test_forms.py      # General form validation tests
 │   └── test_api.py        # API testing with requests
-├── reports/               # Generated test reports
-│   └── qa_report_*.xlsx  # Auto-generated Excel reports
-└── utils/                 # Utility modules
-    ├── reporter.py        # Excel logging and console output
-    └── data_generator.py  # Faker-based test data generation
+├── utils/                 # Utility modules
+│   ├── reporter.py        # Excel logging and console output
+│   └── data_generator.py  # Faker-based test data generation
+└── reports/               # Generated test reports (Excel/CSV)
 ```
 
-## 🚀 Quick Start (CLI)
+## 🚀 Quick Start
 
-### 1. Installation
+### 1) Installation
 
 ```bash
-# Clone or download the project
-cd qa_agent
+# From the project root (this folder)
+
+# Create and activate a virtualenv
+python -m venv .venv
+
+# Windows PowerShell
+. .venv\Scripts\Activate.ps1
+
+# macOS/Linux
+# source .venv/bin/activate
 
 # Install dependencies
-python -m venv .venv
-. .venv/Scripts/activate  # Windows PowerShell: .venv\\Scripts\\Activate.ps1
 pip install -r requirements.txt
-
-# Run CLI
-python main.py
 ```
 
-### 2. Basic Usage
+Optional (Windows) if script execution is blocked:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+### 2) Run via CLI
 
 ```bash
-# Run all tests on default localhost:8000
+# Run all tests on default http://127.0.0.1:8000
 python main.py
 
 # Run tests on custom URL
@@ -64,12 +75,45 @@ agent.run_specific_tests(['tests.test_signup', 'tests.test_login'])
 "
 ```
 
-### 3. View Results
+- Exit codes: 0 when no bugs found; non‑zero when bugs are found (for CI gating).
 
-- **Console Output**: Real-time test results with colored status indicators
-- **Excel/CSV Reports**: Detailed reports saved in `reports/` with host-prefixed filenames
-  
-Note: The previous Web UI has been removed to keep the project focused and lightweight.
+### 3) Run via Web UI
+
+Start the Web UI and operate tests from a browser.
+
+```bash
+# From the project root
+python app.py
+```
+
+- UI will start at http://127.0.0.1:5000 (or http://localhost:5000)
+- In the UI, enter your Base URL (e.g., http://localhost:3000) and click Start Tests
+- Progress, charts, and results will appear when the run completes
+
+### 4) View Results
+
+- CLI: Real-time test results in the console with colored status indicators
+- Web UI: Results Overview (status/type charts) and Latest Results table
+- Reports: Excel/CSV saved in `reports/` with host-prefixed filenames
+
+### 5) UI Panels and API Endpoints
+
+- Start tests (UI): enter Base URL and click Start Tests
+- Status polling: UI uses `/status` to refresh progress and results
+- Tested Data panel: UI calls `/tested-data` and shows only real data from the latest run:
+  - summary: overall run summary
+  - results: all log entries
+  - weaknesses: only BUG/FAIL findings
+  - Empty sections are hidden; only available items are shown
+
+Primary endpoints served by `app.py`:
+
+- `/` Dashboard
+- `/run` Start a run (POST JSON: `{ baseUrl: "http://localhost:3000" }`)
+- `/status` Current progress, results, summary
+- `/tested-data` Real tested data and weaknesses from the last run
+- `/export` Export current results to CSV/Excel
+- `/download?path=...` Download generated files
 
 ### 4. CLI Notes
 
@@ -153,6 +197,10 @@ edge_data = data_generator.generate_edge_case_data()
 api_data = data_generator.generate_api_test_data()
 ```
 
+### Web UI Behavior (Tested Data)
+
+- The Tested Data panel shows only data actually produced by your run. If only a few items exist, only those appear with centered section titles. No placeholders are shown.
+
 ### Adding New Tests
 
 1. Create a new test file in `tests/` directory
@@ -184,8 +232,17 @@ def run_tests(base_url: str, reporter, data_generator):
 
 2. **Connection Refused**
    - Verify your web application is running
-   - Check the correct port number
-   - Ensure the URL is accessible
+   - Check the correct port number and protocol (http vs https)
+   - Ensure the URL is accessible from the machine running the agent
+
+5. **UI Not Starting**
+   - Ensure Flask is installed (already included in requirements)
+   - Run `python app.py` from the project root
+   - Check port 5000 usage; change the port in `app.py` if needed
+
+6. **Empty Tested Data**
+   - Run a fresh test from the UI or CLI; `/tested-data` reflects the latest run only
+   - If your site has no applicable forms/APIs, only summary/weaknesses may appear
 
 3. **Import Errors**
    - Run `pip install -r requirements.txt`
@@ -239,4 +296,4 @@ For issues and questions:
 
 **Happy Testing! 🧪✨**
 
-The Strict QA Agent will help you catch bugs before they reach production and ensure your web application meets the highest quality standards.
+The Strict QA Agent helps you catch bugs before they reach production and ensures your web application meets high quality standards — whether you prefer the CLI or the simple Web UI.

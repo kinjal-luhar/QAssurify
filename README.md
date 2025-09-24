@@ -1,4 +1,4 @@
-# Strict QA Agent — CLI and Web UI
+# QAssurify Agent — CLI and Web UI
 
 A comprehensive, automated QA testing framework for web applications. You can run it via the Command Line (CLI) or from a lightweight Web UI. The agent acts like a real QA tester with strict validation and automated execution.
 

@@ -1,0 +1,14 @@
+Test Case,Result,Details,Test Type,Severity,Timestamp
+Signup Test Setup,FAIL,Failed to setup signup tests: [WinError 193] %1 is not a valid Win32 application,UI,High,2025-09-24 00:15:37
+Login Test Setup,FAIL,Failed to setup login tests: [WinError 193] %1 is not a valid Win32 application,UI,High,2025-09-24 00:15:41
+Navigation Test Setup,FAIL,Failed to setup navigation tests: [WinError 193] %1 is not a valid Win32 application,UI,High,2025-09-24 00:15:44
+Form Test Setup,FAIL,Failed to setup form tests: [WinError 193] %1 is not a valid Win32 application,UI,High,2025-09-24 00:15:47
+API Discovery,BUG,No API endpoints discovered. This might indicate missing API documentation or endpoints.,API,Medium,2025-09-24 00:16:09
+API User Endpoints,BUG,No user-related API endpoints found or accessible,API,Medium,2025-09-24 00:16:25
+API Response Validation,PASS,No API endpoints found to test response validation,API,Low,2025-09-24 00:16:33
+API Error Handling,FAIL,"Error testing API error handling: HTTPConnectionPool(host='127.0.0.1', port=8000): Max retries exceeded with url: /api/nonexistent (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001E7B7AAD250>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",API,High,2025-09-24 00:16:36
+API Security,FAIL,"Error testing API security: HTTPConnectionPool(host='127.0.0.1', port=8000): Max retries exceeded with url: /api (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001E7B7AAFD90>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",Security,High,2025-09-24 00:16:38
+API Performance,PASS,No API endpoints found to test performance,Performance,Low,2025-09-24 00:16:46
+API Authentication,PASS,No protected endpoints found to test authentication,Security,Low,2025-09-24 00:16:52
+API Login Validation,PASS,No login endpoints found to test authentication,Security,Low,2025-09-24 00:16:58
+API Data Validation,PASS,No POST endpoints found to test data validation,API,Low,2025-09-24 00:17:06

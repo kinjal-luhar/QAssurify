@@ -250,7 +250,10 @@ def main():
     """
     Main function - entry point for the QA Agent
     """
-    print("🔍 STRICT QA AGENT")
+    try:
+        print("🔍 STRICT QA AGENT")
+    except Exception:
+        print("STRICT QA AGENT")
     print("=" * 50)
     print("Automated QA testing framework for web applications")
     print("=" * 50)
@@ -269,17 +272,29 @@ def main():
         
         # Exit with appropriate code
         if summary['bugs_found'] > 0:
-            print(f"\n⚠️  QA Agent completed with {summary['bugs_found']} bugs found!")
+            try:
+                print(f"\n⚠️  QA Agent completed with {summary['bugs_found']} bugs found!")
+            except Exception:
+                print(f"\nQA Agent completed with {summary['bugs_found']} bugs found!")
             sys.exit(1)  # Exit with error code if bugs found
         else:
-            print(f"\n✅ QA Agent completed successfully! No bugs found.")
+            try:
+                print(f"\n✅ QA Agent completed successfully! No bugs found.")
+            except Exception:
+                print("\nQA Agent completed successfully! No bugs found.")
             sys.exit(0)  # Exit with success code
             
     except KeyboardInterrupt:
-        print("\n\n⏹️  QA Agent stopped by user")
+        try:
+            print("\n\n⏹️  QA Agent stopped by user")
+        except Exception:
+            print("\n\nQA Agent stopped by user")
         sys.exit(130)
     except Exception as e:
-        print(f"\n❌ QA Agent failed with error: {e}")
+        try:
+            print(f"\n❌ QA Agent failed with error: {e}")
+        except Exception:
+            print(f"\nQA Agent failed with error: {e}")
         sys.exit(1)
 
 

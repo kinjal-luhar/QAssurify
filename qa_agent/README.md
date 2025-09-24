@@ -1,6 +1,6 @@
-# Strict QA Agent
+# Strict QA Agent (CLI Only)
 
-A comprehensive, automated QA testing framework for web applications. The Strict QA Agent acts like a real QA tester but with stricter validation and automated execution.
+A comprehensive, automated QA testing framework for web applications, now focused on a CLI-only workflow. The Strict QA Agent acts like a real QA tester but with stricter validation and automated execution.
 
 ## 🎯 Features
 
@@ -30,7 +30,7 @@ qa_agent/
     └── data_generator.py  # Faker-based test data generation
 ```
 
-## 🚀 Quick Start
+## 🚀 Quick Start (CLI)
 
 ### 1. Installation
 
@@ -43,8 +43,8 @@ python -m venv .venv
 . .venv/Scripts/activate  # Windows PowerShell: .venv\\Scripts\\Activate.ps1
 pip install -r requirements.txt
 
-# Start Web UI
-python start_ui.py
+# Run CLI
+python main.py
 ```
 
 ### 2. Basic Usage
@@ -68,15 +68,13 @@ agent.run_specific_tests(['tests.test_signup', 'tests.test_login'])
 
 - **Console Output**: Real-time test results with colored status indicators
 - **Excel/CSV Reports**: Detailed reports saved in `reports/` with host-prefixed filenames
-- **Web UI Dashboard**: Compact, professional UI with filters, pagination, uploads, and charts
+  
+Note: The previous Web UI has been removed to keep the project focused and lightweight.
 
-### 4. Web UI Features
+### 4. CLI Notes
 
-- Run/stop tests against a target URL, choose specific modules
-- Upload existing `xlsx/csv` reports for analysis
-- Clear in-memory results
-- Filter by Status/Type/Severity and Search, with pagination and filtered CSV download
-- Charts: Pass rate doughnut, Security pass bar
+- Use the exit code for CI gating (non-zero when bugs are found)
+- Reports are written to `reports/` with host-prefixed filenames
 
 ## 🔍 Test Coverage
 

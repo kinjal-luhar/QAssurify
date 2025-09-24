@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QAssurify — History</title>
+    <link rel="stylesheet" href="/static/css/qassurify.css" />
+    <style>
+        :root{--red:#E43636;--cream:#F6EFD2;--beige:#E2DDB4;--black:#000}
+        body{background:var(--cream);color:var(--black);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0}
+        .container{max-width:1000px;margin:0 auto;padding:24px}
+        header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .brand{display:flex;gap:12px;align-items:center}
+        .logo{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--red),#b32020);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+        .title{font-size:20px;font-weight:700}
+        .card{background:#fff;border:1px solid var(--beige);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+        .card h3{margin:0;padding:16px;border-bottom:1px solid var(--beige);font-size:16px}
+        .card .body{padding:16px}
+        .muted{color:#555;font-size:12px}
+        .file{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--beige)}
+        .file a{color:#000;text-decoration:none}
+    </style>
+    <script>
+        async function getJSON(url){const r = await fetch(url);return r.json();}
+        async function refresh(){
+            const dir = document.getElementById('dir').value.trim()||'';
+            const data = await getJSON('/reports'+(dir?`?dir=${encodeURIComponent(dir)}`:''));
+            const list = document.getElementById('list');
+            if(!data.ok){list.innerHTML = '<div class="muted">Unable to load history</div>';return;}
+            list.innerHTML = data.files.map(f=>`<div class="file"><div><div>${f.name}</div><div class="muted">${(f.size/1024).toFixed(1)} KB · ${new Date(f.modified).toLocaleString()}</div></div><div><a href="/download?path=${encodeURIComponent(f.path)}">Download</a></div></div>`).join('');
+        }
+        window.addEventListener('DOMContentLoaded',()=>{refresh()});
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <div class="logo">QA</div>
+                <div class="title">QAssurify — History</div>
+            </div>
+            <nav>
+                <a href="/" class="secondary" style="text-decoration:none; padding:8px 12px; border-radius:8px">Dashboard</a>
+                <a href="/history" class="secondary" style="text-decoration:none; padding:8px 12px; border-radius:8px">History</a>
+                <a href="/insights" class="secondary" style="text-decoration:none; padding:8px 12px; border-radius:8px">Insights</a>
+            </nav>
+        </header>
+
+        <div class="card">
+            <h3>Report Files</h3>
+            <div class="body">
+                <div style="display:flex; gap:8px; margin-bottom:12px">
+                    <input id="dir" placeholder="reports" style="padding:10px 12px; border:1px solid var(--beige); border-radius:8px; width:320px" />
+                    <button class="secondary" onclick="refresh()">Load</button>
+                </div>
+                <div id="list"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+

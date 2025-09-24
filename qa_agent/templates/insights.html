@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QAssurify — Insights</title>
+    <link rel="stylesheet" href="/static/css/qassurify.css" />
+    <style>
+        :root{--red:#E43636;--cream:#F6EFD2;--beige:#E2DDB4;--black:#000}
+        body{background:var(--cream);color:var(--black);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0}
+        .container{max-width:1000px;margin:0 auto;padding:24px}
+        header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .brand{display:flex;gap:12px;align-items:center}
+        .logo{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--red),#b32020);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+        .title{font-size:20px;font-weight:700}
+        .card{background:#fff;border:1px solid var(--beige);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+        .card h3{margin:0;padding:16px;border-bottom:1px solid var(--beige);font-size:16px}
+        .card .body{padding:16px}
+        .pill{display:inline-block;padding:4px 10px;border:1px solid var(--beige);border-radius:999px;font-size:12px;margin-right:8px}
+        .muted{color:#555;font-size:12px}
+        ul{padding-left:16px}
+    </style>
+    <script>
+        async function getJSON(url){const r = await fetch(url);return r.json();}
+        async function loadInsights(){
+            const s = await getJSON('/status');
+            const recs = s.recommendations||[];
+            document.getElementById('recs').innerHTML = recs.length ? recs.map(r=>`<li><span class="pill">${r.Priority}</span> ${r.Recommendation}</li>`).join('') : '<div class="muted">No insights yet. Run a suite from Dashboard.</div>';
+        }
+        window.addEventListener('DOMContentLoaded',loadInsights);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <div class="logo">QA</div>
+                <div class="title">QAssurify — Insights</div>
+            </div>
+            <nav>
+                <a href="/" class="secondary" style="text-decoration:none; padding:8px 12px; border-radius:8px">Dashboard</a>
+                <a href="/history" class="secondary" style="text-decoration:none; padding:8px 12px; border-radius:8px">History</a>
+                <a href="/insights" class="secondary" style="text-decoration:none; padding:8px 12px; border-radius:8px">Insights</a>
+            </nav>
+        </header>
+
+        <div class="card">
+            <h3>Actionable Recommendations</h3>
+            <div class="body">
+                <ul id="recs"></ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+

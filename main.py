@@ -2,15 +2,19 @@
 Strict QA Agent - Main Entry Point
 Automated QA testing framework for web applications
 
-This is the main entry point that runs all test suites in sequence.
-The agent will test a complete web project hosted on localhost.
+This is the main entry point that runs test suites in parallel with optimized performance.
 """
 
 import sys
 import os
 import time
+import subprocess
+import argparse
 from datetime import datetime
 from typing import List, Dict, Any, Callable, Optional
+from concurrent.futures import ThreadPoolExecutor
+import multiprocessing
+from threading import Event
 
 # Add the current directory to Python path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -21,95 +25,324 @@ from utils.data_generator import TestDataGenerator
 
 class StrictQAAgent:
     """
-    Main QA Agent class that orchestrates all testing activities
+    Main QA Agent class that orchestrates parallel test execution with optimizations
     """
     
-    def __init__(self, base_url: str = "http://127.0.0.1:8000", progress_callback: Optional[Callable[[int], None]] = None):
+    def __init__(self, base_url: str = "http://127.0.0.1:8000",
+                 mode: str = "full",
+                 headless: bool = False,
+                 reporter: Optional[QAReporter] = None,
+                 data_generator: Optional[TestDataGenerator] = None,
+                 max_workers: Optional[int] = None):
         """
         Initialize the QA Agent
         
         Args:
             base_url: Base URL of the web application to test
+            mode: Test mode - one of "fast", "smoke", "integration", "full", "e2e"
+            headless: Run browsers in headless mode
+            reporter: QAReporter instance for result tracking
+            data_generator: TestDataGenerator instance
+            max_workers: Maximum number of parallel test processes
         """
         self.base_url = base_url
-        self.reporter = QAReporter()
-        self.data_generator = TestDataGenerator()
-        self.start_time = None
-        self.end_time = None
-        self.stop_requested = False
-        self.progress_callback = progress_callback
+        self.mode = "full" if mode.lower() == "e2e" else mode.lower()
+        self.headless = headless
+        self.reporter = reporter or QAReporter()
+        self.data_generator = data_generator or TestDataGenerator()
+        self.cancel_requested = False
         
-        # Test modules to run
-        self.test_modules = [
-            'tests.test_signup',
-            'tests.test_login', 
-            'tests.test_navigation',
-            'tests.test_forms',
-            'tests.test_api'
-        ]
-    
+        # Determine optimal number of workers
+        self.max_workers = max_workers or min(
+            multiprocessing.cpu_count(),
+            5  # Cap at 5 browsers to avoid resource exhaustion
+        )
+        
+        # Define test module mappings based on mode
+        MODE_TEST_MAP = {
+            "smoke": {  # Ultra-light smoke tests (~7s)
+                "modules": [
+                    "tests.test_navigation",  # Just homepage load
+                    "tests.test_api"         # One fast API call
+                ],
+                "options": {
+                    "ultra_light": True,        # Minimal checks only
+                    "short_timeout": True,      # Use 3s timeouts
+                    "skip_validation": True,    # Skip all validation
+                    "skip_discovery": True,     # No endpoint discovery
+                    "max_results": 3,          # Stop after 3 results
+                }
+            },
+            "fast": {  # Basic regression subset (~2min)
+                "modules": [
+                    "tests.test_login",
+                    "tests.test_navigation",
+                    "tests.test_api"
+                ],
+                "options": {
+                    "skip_validation": True,
+                    "skip_edge_cases": True,
+                    "quick_mode": True
+                }
+            },
+            "integration": {  # Integration tests (~5min)
+                "modules": [
+                    "tests.test_signup",
+                    "tests.test_login",
+                    "tests.test_api",
+                    "tests.test_forms"
+                ],
+                "options": {
+                    "skip_performance": True
+                }
+            },
+            "full": {  # Complete regression (~15min)
+                "modules": [
+                    "tests.test_signup",
+                    "tests.test_login",
+                    "tests.test_navigation",
+                    "tests.test_forms",
+                    "tests.test_api",
+                    "tests.test_security",
+                    "tests.test_performance"
+                ],
+                "options": {}
+            }
+        }
+        
+        # Set test modules and options based on mode
+        mode_config = MODE_TEST_MAP.get(self.mode, MODE_TEST_MAP["full"])
+        self.test_modules = mode_config["modules"]
+        self.test_options = mode_config["options"]
+
+    def request_cancel(self):
+        """Request cancellation of the current test run"""
+        self.cancel_requested = True
+
     def run_all_tests(self) -> Dict[str, Any]:
         """
-        Run all test suites in sequence
+        Run all test modules based on current mode
         
         Returns:
-            Dictionary with test execution summary
+            Dict with test execution summary
         """
         print("🚀 Starting Strict QA Agent...")
         print(f"🎯 Target URL: {self.base_url}")
+        print(f"⚙️  Mode: {self.mode}")
         print(f"⏰ Start Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("="*80)
         
+        # Initialize test run
+        self.reporter.start_run()
+        self.reporter.set_total_tests(len(self.test_modules))
         self.start_time = time.time()
+        total_bugs = 0
         
-        total_modules = len(self.test_modules)
-        # Run each test module
-        for index, module_name in enumerate(self.test_modules, start=1):
-            if self.stop_requested:
-                print("⏹️  Stop requested. Halting remaining tests.")
-                break
-            # Update progress before running module
-            try:
-                if self.progress_callback and total_modules > 0:
-                    percent = int(((index - 1) / total_modules) * 100)
-                    self.progress_callback(percent)
-            except Exception:
-                pass
-            try:
-                print(f"\n📋 Running {module_name}...")
-                self._run_test_module(module_name)
-            except ImportError as e:
-                print(f"⚠️  Module {module_name} not found: {e}")
-                self.reporter.log_test_result(
-                    f"Import {module_name}",
-                    "FAIL",
-                    f"Module not found: {e}",
-                    "System",
-                    "High"
-                )
-            except Exception as e:
-                print(f"❌ Error running {module_name}: {e}")
-                self.reporter.log_test_result(
-                    f"Execute {module_name}",
-                    "FAIL", 
-                    f"Execution error: {e}",
-                    "System",
-                    "High"
-                )
-        
-        self.end_time = time.time()
-        execution_time = self.end_time - self.start_time
-        # Ensure progress shows 100% at end
         try:
-            if self.progress_callback:
-                self.progress_callback(100)
-        except Exception:
-            pass
+            for module_name in self.test_modules:
+                # Check for cancellation request
+                if self.cancel_requested:
+                    print("⏹️  Test execution cancelled by user")
+                    self.reporter.log_test_result(
+                        "Test Suite",
+                        "CANCELLED",
+                        "Test execution cancelled by user",
+                        "System",
+                        "Info"
+                    )
+                    success = False
+                    break
+                
+                print(f"\n📋 Running {module_name}...")
+                try:
+                    # Run the test module
+                    if not self._run_test_module(module_name):
+                        total_bugs += 1
+                    
+                    # Increment completed tests
+                    self.reporter.increment_completed()
+                    
+                except Exception as e:
+                    total_bugs += 1
+                    self.reporter.log_test_result(
+                        f"Execute {module_name}",
+                        "FAIL",
+                        f"Module execution failed: {str(e)}",
+                        "System",
+                        "High"
+                    )
+            
+            self.end_time = time.time()
+            execution_time = self.end_time - self.start_time
+            
+            # Finalize run
+            self.reporter.finish_run()
+            
+            # Generate report if any tests were run
+            if total_bugs > 0 or not self.cancel_requested:
+                self._generate_final_report(execution_time)
+            
+            return {
+                "success": total_bugs == 0 and not self.cancel_requested,
+                "bugs_found": total_bugs,
+                "execution_time": execution_time,
+                "cancelled": self.cancel_requested,
+                "mode": self.mode
+            }
+            
+        except Exception as e:
+            self.reporter.log_test_result(
+                "Test Suite",
+                "FAIL",
+                f"Test suite execution failed: {str(e)}",
+                "System",
+                "High"
+            )
+            self.reporter.finish_run()
+            return {
+                "success": False,
+                "bugs_found": total_bugs + 1,
+                "error": str(e),
+                "cancelled": self.cancel_requested,
+                "mode": self.mode
+            }
+
+    def _run_test_module(self, module: str) -> bool:
+        """
+        Run a single test module
         
-        # Generate final report
-        self._generate_final_report(execution_time)
+        Args:
+            module: Module path (e.g., 'tests.test_signup')
+            
+        Returns:
+            bool: True if tests passed, False if failed
+        """
+        try:
+            # Import the module
+            module = __import__(module, fromlist=['run_tests'])
+            
+            # Check if the module has a run_tests function
+            if hasattr(module, 'run_tests'):
+                # Run the tests with the agent's context
+                module.run_tests(
+                    base_url=self.base_url,
+                    reporter=self.reporter,
+                    data_generator=self.data_generator,
+                    headless=self.headless
+                )
+                return True
+            else:
+                self.reporter.log_test_result(
+                    f"Module {module}",
+                    "FAIL",
+                    "Module doesn't have run_tests function",
+                    "System",
+                    "Medium"
+                )
+                return False
+                
+        except Exception as e:
+            self.reporter.log_test_result(
+                f"Module {module}",
+                "FAIL",
+                f"Module execution error: {str(e)}",
+                "System", 
+                "High"
+            )
+            return False
+    
+    def request_cancel(self):
+        """Signal the agent to cancel running further tests."""
+        self.cancel_requested = True
+
+    def run_all_tests(self) -> Dict[str, Any]:
+        """
+        Run all test modules based on current mode
         
-        return self._get_execution_summary(execution_time)
+        Returns:
+            Dict with test execution summary
+        """
+        print("🚀 Starting Strict QA Agent...")
+        print(f"🎯 Target URL: {self.base_url}")
+        print(f"⚙️  Mode: {self.mode}")
+        print(f"⏰ Start Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("="*80)
+        
+        # Initialize test run
+        self.reporter.start_run()
+        self.reporter.set_total_tests(len(self.test_modules))
+        self.start_time = time.time()
+        total_bugs = 0
+        was_cancelled = False
+        
+        try:
+            for index, module_name in enumerate(self.test_modules, 1):
+                # Check for cancellation request
+                if self.cancel_requested:
+                    print("⏹️  Test execution cancelled by user")
+                    self.reporter.log_test_result(
+                        "Test Suite",
+                        "CANCELLED",
+                        "Test execution cancelled by user",
+                        "System",
+                        "Info"
+                    )
+                    was_cancelled = True
+                    break
+                
+                print(f"\n📋 Running {module_name}...")
+                try:
+                    # Run the test module
+                    if not self._run_test_module(module_name):
+                        total_bugs += 1
+                    
+                    # Increment completed tests
+                    self.reporter.increment_completed()
+                    
+                except Exception as e:
+                    total_bugs += 1
+                    self.reporter.log_test_result(
+                        f"Execute {module_name}",
+                        "FAIL",
+                        f"Module execution failed: {str(e)}",
+                        "System",
+                        "High"
+                    )
+            
+            self.end_time = time.time()
+            execution_time = self.end_time - self.start_time
+            
+            # Finalize run
+            self.reporter.finish_run()
+            
+            # Generate report if any tests were run
+            if total_bugs > 0 or not was_cancelled:
+                self._generate_final_report(execution_time)
+            
+            return {
+                "success": total_bugs == 0 and not was_cancelled,
+                "bugs_found": total_bugs,
+                "execution_time": execution_time,
+                "cancelled": was_cancelled,
+                "mode": self.mode
+            }
+            
+        except Exception as e:
+            self.reporter.log_test_result(
+                "Test Suite",
+                "FAIL",
+                f"Test suite execution failed: {str(e)}",
+                "System",
+                "High"
+            )
+            self.reporter.finish_run()
+            return {
+                "success": False,
+                "bugs_found": total_bugs + 1,
+                "error": str(e),
+                "cancelled": self.cancel_requested,
+                "mode": self.mode
+            }
     
     def _run_test_module(self, module_name: str):
         """
@@ -211,8 +444,8 @@ class StrictQAAgent:
         
         total_modules = len(test_modules)
         for index, module_name in enumerate(test_modules, start=1):
-            if self.stop_requested:
-                print("⏹️  Stop requested. Halting remaining tests.")
+            if self.cancel_requested:
+                print("⏹️  Cancel requested. Halting remaining tests.")
                 break
             try:
                 if self.progress_callback and total_modules > 0:
@@ -242,14 +475,21 @@ class StrictQAAgent:
         return self._get_execution_summary(execution_time)
 
     def request_stop(self):
-        """Signal the agent to stop running further tests."""
-        self.stop_requested = True
+        """Signal the agent to stop running further tests (alias for request_cancel)."""
+        self.request_cancel()
 
 
 def main():
     """
     Main function - entry point for the QA Agent
     """
+    # Set up command line argument parsing
+    parser = argparse.ArgumentParser(description='Strict QA Agent - Automated web testing framework')
+    parser.add_argument("base_url", help="Base URL of the site to test", nargs='?', default="http://127.0.0.1:8000")
+    parser.add_argument("--mode", choices=["fast", "full"], default="full", help="Run mode (fast=smoke tests only, full=all tests)")
+    parser.add_argument("--headless", action="store_true", help="Run tests in headless mode")
+    args = parser.parse_args()
+    
     try:
         print("🔍 STRICT QA AGENT")
     except Exception:
@@ -257,14 +497,15 @@ def main():
     print("=" * 50)
     print("Automated QA testing framework for web applications")
     print("=" * 50)
+    print(f"Mode: {args.mode}")
+    print(f"Target: {args.base_url}")
     
-    # Get base URL from command line argument or use default
-    base_url = "http://127.0.0.1:8000"
-    if len(sys.argv) > 1:
-        base_url = sys.argv[1]
-    
-    # Create and run the QA Agent
-    agent = StrictQAAgent(base_url)
+    # Create and run the QA Agent with parsed arguments
+    agent = StrictQAAgent(
+        base_url=args.base_url,
+        mode=args.mode,
+        headless=args.headless
+    )
     
     try:
         # Run all tests
@@ -287,6 +528,7 @@ def main():
     except KeyboardInterrupt:
         try:
             print("\n\n⏹️  QA Agent stopped by user")
+            agent.request_cancel()  # Ensure clean shutdown
         except Exception:
             print("\n\nQA Agent stopped by user")
         sys.exit(130)

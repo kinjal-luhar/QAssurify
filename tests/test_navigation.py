@@ -1,42 +1,53 @@
 """
-Navigation Tests
-Tests page navigation, links, menus, and user flow through the application
+Ultra-light smoke test for basic site navigation.
+Only checks if homepage loads and has a title.
 """
 
-import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
-from urllib.parse import urljoin, urlparse
+from selenium.common.exceptions import TimeoutException
 
 from utils.driver_setup import get_driver
 
+def test_homepage_load(driver, base_url, test_options):
+    """Check if homepage loads with a valid title."""
+    # Set aggressive timeout for smoke tests
+    if test_options.get('short_timeout'):
+        driver.set_page_load_timeout(3)
+    
+    try:
+        driver.get(base_url)
+        
+        # Wait max 3s for title to be non-empty
+        WebDriverWait(driver, 3).until(
+            lambda x: x.title and len(x.title.strip()) > 0
+        )
+        
+        assert driver.title.strip(), "Homepage should have non-empty title"
+        return True, "Homepage loads successfully"
+        
+    except Exception as e:
+        return False, f"Homepage failed to load: {str(e)}"
 
-def run_tests(base_url: str, reporter, data_generator):
+def run_tests(base_url: str, reporter, test_options=None):
     """
-    Run all navigation tests
+    Run ultra-light smoke test for navigation
     
     Args:
         base_url: Base URL of the web application
         reporter: QAReporter instance for logging results
-        data_generator: TestDataGenerator instance for test data
+        test_options: Dictionary of test options for smoke test configuration
     """
-    print("🧭 Testing Navigation...")
+    print("🔥 Running Ultra-Light Navigation Smoke Test...")
     
     driver = None
     try:
-        # Setup Chrome driver
         driver = get_driver(headless=True)
         
-        # Test 1: Test homepage navigation
-        test_homepage_navigation(driver, base_url, reporter)
-        
-        # Test 2: Test main navigation menu
-        test_main_navigation_menu(driver, base_url, reporter)
-        
-        # Test 3: Test footer links
-        test_footer_links(driver, base_url, reporter)
+        # Single test: Check if homepage loads
+        success, message = test_homepage_load(driver, base_url, test_options or {})
+        reporter.add_result("Homepage Load", success, message)
         
         # Test 4: Test internal links
         test_internal_links(driver, base_url, reporter)

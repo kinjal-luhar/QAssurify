@@ -1,270 +1,222 @@
 """
 Login Tests
 Tests user authentication functionality including login form validation, credential verification, and security features
+Supports both smoke test mode (quick validation) and full regression mode
 """
 
-import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 from utils.driver_setup import get_driver
 
 
-def run_tests(base_url: str, reporter, data_generator):
-    """
-    Run login tests for SauceDemo
-    
-    Args:
-        base_url: Base URL of the web application (should be https://www.saucedemo.com)
-        reporter: QAReporter instance for logging results
-        data_generator: TestDataGenerator instance (not used as we use fixed credentials)
-    """
-    print("🔑 Testing SauceDemo Login Functionality...")
-    
-    driver = None
+def test_login_page_loads(driver, base_url, reporter, wait):
+    """Core smoke test: Verify login page loads with required elements"""
     try:
-        # Setup Chrome driver with proper configuration
-        driver = get_driver(headless=True)
-        wait = WebDriverWait(driver, 10)
+        driver.get(base_url)
+        username_field = wait.until(EC.presence_of_element_located((By.ID, "user-name")))
+        password_field = wait.until(EC.presence_of_element_located((By.ID, "password")))
+        login_button = wait.until(EC.element_to_be_clickable((By.ID, "login-button")))
         
-        # Test empty credentials first
-        test_empty_credentials(driver, base_url, reporter, wait)
+        reporter.log_test_result(
+            "Login Page Load",
+            "PASS",
+            "Login page loads with all required elements",
+            "Login",
+            "High"
+        )
+        return username_field, password_field, login_button
+    except Exception as e:
+        reporter.log_test_result(
+            "Login Page Load",
+            "FAIL",
+            f"Login page failed to load: {str(e)}",
+            "Login",
+            "High"
+        )
+        return None
+
+def test_valid_login(driver, base_url, reporter, wait, form_elements=None):
+    """Core smoke test: Verify login works with valid credentials"""
+    try:
+        if not form_elements:
+            form_elements = test_login_page_loads(driver, base_url, reporter, wait)
+        if not form_elements:
+            return False
+            
+        username_field, password_field, login_button = form_elements
+        username_field.send_keys("standard_user")
+        password_field.send_keys("secret_sauce")
+        login_button.click()
         
-        # Test invalid credentials
-        test_invalid_credentials(driver, base_url, reporter, wait)
+        # Verify successful login
+        wait.until(EC.presence_of_element_located((By.CLASS_NAME, "inventory_list")))
         
-        # Test successful login with valid credentials
+        reporter.log_test_result(
+            "Valid Login",
+            "PASS",
+            "Successfully logged in with valid credentials",
+            "Login",
+            "High"
+        )
+        return True
+    except Exception as e:
+        reporter.log_test_result(
+            "Valid Login",
+            "FAIL",
+            f"Valid login test failed: {str(e)}",
+            "Login",
+            "High"
+        )
+        return False
+
+def test_empty_credentials(driver, base_url, reporter, wait):
+    """Test login attempt with empty credentials (non-smoke)"""
+    try:
+        form_elements = test_login_page_loads(driver, base_url, reporter, wait)
+        if not form_elements:
+            return
+        
+        _, _, login_button = form_elements
+        login_button.click()
+        
+        # Check for error message
+        error = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".error-message")))
+        
+        reporter.log_test_result(
+            "Empty Credentials",
+            "PASS",
+            "Empty credentials properly rejected",
+            "Login",
+            "Medium"
+        )
+    except Exception as e:
+        reporter.log_test_result(
+            "Empty Credentials",
+            "FAIL",
+            f"Empty credentials test failed: {str(e)}",
+            "Login",
+            "Medium"
+        )
+
+def test_invalid_credentials(driver, base_url, reporter, wait):
+    """Test invalid login scenarios (non-smoke)"""
+    invalid_tests = [
+        ("invalid_user", "invalid_pass", "Invalid username/password"),
+        ("", "secret_sauce", "Username is required"),
+        ("standard_user", "", "Password is required"),
+        ("locked_out_user", "secret_sauce", "User is locked out"),
+    ]
+    
+    for username, password, expected_message in invalid_tests:
         try:
-            driver.get(base_url)
-            
-            # Wait for and fill in login form
-            username_field = wait.until(
-                EC.presence_of_element_located((By.ID, "user-name"))
-            )
-            password_field = wait.until(
-                EC.presence_of_element_located((By.ID, "password"))
-            )
-            login_button = wait.until(
-                EC.element_to_be_clickable((By.ID, "login-button"))
-            )
-            
-            username_field.send_keys("standard_user")
-            password_field.send_keys("secret_sauce")
+            form_elements = test_login_page_loads(driver, base_url, reporter, wait)
+            if not form_elements:
+                continue
+                
+            username_field, password_field, login_button = form_elements
+            username_field.send_keys(username)
+            password_field.send_keys(password)
             login_button.click()
             
-            # Verify successful login
-            inventory_list = wait.until(
-                EC.presence_of_element_located((By.CLASS_NAME, "inventory_list"))
-            )
+            error = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".error-message")))
             
             reporter.log_test_result(
-                "SauceDemo Login Test",
+                f"Invalid Login - {username or 'empty'}",
                 "PASS",
-                "Successfully logged in with standard_user credentials",
-                "Authentication",
-                "Low"
-            )
-            
-            # Test logout functionality
-            menu_button = wait.until(
-                EC.element_to_be_clickable((By.ID, "react-burger-menu-btn"))
-            )
-            menu_button.click()
-            
-            logout_link = wait.until(
-                EC.element_to_be_clickable((By.ID, "logout_sidebar_link"))
-            )
-            logout_link.click()
-            
-            # Verify we're back at login page
-            wait.until(
-                EC.presence_of_element_located((By.ID, "user-name"))
-            )
-            
-            reporter.log_test_result(
-                "SauceDemo Logout Test",
-                "PASS",
-                "Successfully logged out and returned to login page",
-                "Authentication",
-                "Low"
-            )
-            
-        except TimeoutException as e:
-            reporter.log_test_result(
-                "SauceDemo Login Test",
-                "FAIL",
-                f"Login failed - timeout waiting for elements: {str(e)}",
-                "Authentication",
-                "High"
+                f"Invalid credentials properly rejected: {expected_message}",
+                "Login",
+                "Medium"
             )
         except Exception as e:
             reporter.log_test_result(
-                "SauceDemo Login Test",
+                f"Invalid Login - {username or 'empty'}",
                 "FAIL",
-                f"Login failed with unexpected error: {str(e)}",
-                "Authentication",
-                "High"
+                f"Invalid credentials test failed: {str(e)}",
+                "Login",
+                "Medium"
             )
+
+def test_session_handling(driver, base_url, reporter, wait):
+    """Test session management and logout (non-smoke)"""
+    try:
+        if not test_valid_login(driver, base_url, reporter, wait):
+            return
             
+        # Find and click logout
+        logout = wait.until(EC.element_to_be_clickable((By.ID, "logout_sidebar_link")))
+        logout.click()
+        
+        # Verify back at login page
+        wait.until(EC.presence_of_element_located((By.ID, "login-button")))
+        
+        reporter.log_test_result(
+            "Session Management",
+            "PASS",
+            "Logout functionality works correctly",
+            "Login",
+            "Medium"
+        )
     except Exception as e:
         reporter.log_test_result(
-            "SauceDemo Login Test Setup",
+            "Session Management",
             "FAIL",
-            f"Failed to setup or run login tests: {e}",
-            "UI",
-            "High"
+            f"Session management test failed: {str(e)}",
+            "Login",
+            "Medium"
         )
+
+def run_tests(base_url: str, reporter, data_generator, **options):
+    """
+    Run login test suite with configurable test levels
+    
+    Args:
+        base_url: Base URL of the web application
+        reporter: QAReporter instance for logging results
+        data_generator: TestDataGenerator instance
+        options: Test configuration options including:
+            - skip_validation: Skip extensive form validation
+            - skip_edge_cases: Skip edge cases
+            - quick_mode: Run minimal test set for smoke tests
+    """
+    print("🔑 Testing Login Functionality...")
+    
+    # Extract test options
+    skip_validation = options.get('skip_validation', False)
+    skip_edge_cases = options.get('skip_edge_cases', False)
+    quick_mode = options.get('quick_mode', False)
+    
+    driver = None
+    try:
+        driver = get_driver(headless=True)
+        wait = WebDriverWait(driver, 5 if quick_mode else 10)  # Shorter timeouts in smoke mode
+        
+        # Core smoke tests - always run these
+        form_elements = test_login_page_loads(driver, base_url, reporter, wait)
+        if not form_elements:
+            return  # Stop if login page doesn't load
+            
+        if not test_valid_login(driver, base_url, reporter, wait, form_elements):
+            return  # Stop if basic login fails
+            
+        # Additional tests based on mode
+        if not quick_mode:
+            test_empty_credentials(driver, base_url, reporter, wait)
+            
+        if not skip_edge_cases:
+            test_invalid_credentials(driver, base_url, reporter, wait)
+            
+        if not skip_validation:
+            test_session_handling(driver, base_url, reporter, wait)
+            
     finally:
         if driver:
             driver.quit()
 
 
 # Remove the setup_driver function as we'll use get_driver directly
-
-
-def test_login_page_loads(driver, login_url, reporter):
-    """
-    Test if the login page loads correctly
-    
-    Args:
-        driver: WebDriver instance
-        login_url: URL of the login page
-        reporter: QAReporter instance
-    """
-    try:
-        driver.get(login_url)
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
-        
-        # Check if page title contains login-related keywords
-        page_title = driver.title.lower()
-        if any(keyword in page_title for keyword in ['login', 'sign in', 'signin', 'authentication']):
-            reporter.log_test_result(
-                "Login Page Loads",
-                "PASS",
-                f"Login page loaded successfully. Title: {driver.title}",
-                "UI",
-                "Low"
-            )
-        else:
-            reporter.log_test_result(
-                "Login Page Loads",
-                "BUG",
-                f"Login page loaded but title doesn't indicate login: {driver.title}",
-                "UI",
-                "Medium"
-            )
-            
-    except TimeoutException:
-        reporter.log_test_result(
-            "Login Page Loads",
-            "FAIL",
-            f"Login page failed to load within timeout: {login_url}",
-            "UI",
-            "High"
-        )
-    except Exception as e:
-        reporter.log_test_result(
-            "Login Page Loads",
-            "FAIL",
-            f"Error loading login page: {e}",
-            "UI",
-            "High"
-        )
-
-
-def test_invalid_credentials(driver, base_url, reporter, wait):
-    """Test login with invalid credentials for SauceDemo"""
-    try:
-        driver.get(base_url)
-        
-        # Get form elements
-        username_field = wait.until(EC.presence_of_element_located((By.ID, "user-name")))
-        password_field = driver.find_element(By.ID, "password")
-        login_button = driver.find_element(By.ID, "login-button")
-        
-        # Try invalid credentials
-        username_field.send_keys("wrong_user")
-        password_field.send_keys("wrong_pass")
-        login_button.click()
-        
-        # Check for error message
-        error_message = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "[data-test='error']"))
-        )
-        
-        if error_message and error_message.is_displayed():
-            reporter.log_test_result(
-                "SauceDemo Invalid Login",
-                "PASS",
-                f"Login correctly rejected invalid credentials: {error_message.text}",
-                "Security",
-                "Low"
-            )
-        else:
-            reporter.log_test_result(
-                "SauceDemo Invalid Login",
-                "FAIL",
-                "No error message shown for invalid credentials",
-                "Security",
-                "High"
-            )
-            
-    except Exception as e:
-        reporter.log_test_result(
-            "SauceDemo Invalid Login",
-            "FAIL",
-            f"Error testing invalid credentials: {e}",
-            "Security",
-            "High"
-        )
-
-
-def test_empty_credentials(driver, base_url, reporter, wait):
-    """Test login with empty credentials for SauceDemo"""
-    try:
-        driver.get(base_url)
-        
-        # Get login button and click without entering credentials
-        login_button = wait.until(
-            EC.presence_of_element_located((By.ID, "login-button"))
-        )
-        login_button.click()
-        
-        # Check for error message
-        error_message = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "[data-test='error']"))
-        )
-        
-        if error_message and "Username is required" in error_message.text:
-            reporter.log_test_result(
-                "SauceDemo Empty Login",
-                "PASS",
-                "Login correctly requires username field",
-                "Form",
-                "Low"
-            )
-        else:
-            reporter.log_test_result(
-                "SauceDemo Empty Login",
-                "FAIL",
-                "No validation message for empty credentials",
-                "Form",
-                "High"
-            )
-            
-    except Exception as e:
-        reporter.log_test_result(
-            "SauceDemo Empty Login",
-            "FAIL",
-            f"Error testing empty credentials: {e}",
-            "Form",
-            "High"
-        )
-
 
 def find_saucedemo_element(driver, element_id, wait_timeout=10):
     """

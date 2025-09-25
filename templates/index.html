@@ -93,6 +93,79 @@
         .nav-btn{display:inline-block;background:#fff;border:1px solid var(--beige);color:#000;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:600;margin-left:8px}
         .nav-btn:hover{background:#faf8ef}
         .nav-btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+        /* Mode selection */
+        .mode-selection {
+            margin: 12px 0;
+        }
+        .radio-group {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .radio-group input[type="radio"] {
+            width: auto;
+        }
+
+        /* Options */
+        .options {
+            margin: 12px 0;
+        }
+        .options label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .options input[type="checkbox"] {
+            width: auto;
+        }
+
+        /* Results panel */
+        .results-panel {
+            margin-top: 24px;
+        }
+        .result-item {
+            background: #fff;
+            border: 1px solid var(--beige);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+        .result-item.pass {
+            border-left: 4px solid #4caf50;
+        }
+        .result-item.fail {
+            border-left: 4px solid #f44336;
+        }
+        .result-item.bug {
+            border-left: 4px solid #ff9800;
+        }
+        .result-item h3 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+        }
+        .result-item small {
+            color: #666;
+            font-size: 12px;
+        }
+
+        /* Cancel button styling */
+        #cancelBtn {
+            display: none;
+            background: var(--red);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
         .top-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;white-space:nowrap}
         .kv-table{width:100%;border-collapse:collapse}
         .kv-table{table-layout:fixed}
@@ -140,42 +213,137 @@
             .replace(/'/g,'&#39;');
         async function startRun(){
             const baseUrl = document.getElementById('baseUrl').value.trim() || 'http://127.0.0.1:8000';
-            const btn = document.getElementById('runBtn');
-            btn.disabled = true;
-            // immediate visual feedback
+            
+            // Validate URL format
+            try {
+                new URL(baseUrl);
+            } catch(e) {
+                alert('Please enter a valid URL (e.g., http://example.com)');
+                return;
+            }
+
+            const runBtn = document.getElementById('runBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            
+            // Validate button state
+            if (!runBtn || !cancelBtn) {
+                console.error('Run or Cancel button not found');
+                return;
+            }
+
+            // Get test mode
+            let testMode = 'full';
+            const modeRadios = document.getElementsByName('mode');
+            for (const radio of modeRadios) {
+                if (radio.checked) {
+                    testMode = radio.value;
+                    break;
+                }
+            }
+
+            // Update UI state
+            runBtn.style.display = 'none';
+            cancelBtn.style.display = 'inline-block';
+            runBtn.disabled = true;
+
+            // Update progress indicators
             document.querySelector('.bar').style.width = '1%';
             document.getElementById('progressText').textContent = 'Starting...';
-            // show chart loaders immediately so area isn't blank
-            const l1s = document.getElementById('loadStatus'); if(l1s) l1s.style.display = 'flex';
-            const l2s = document.getElementById('loadTypes'); if(l2s) l2s.style.display = 'flex';
-            const resArea = document.getElementById('resultsArea'); if(resArea) resArea.style.display = 'none';
-            const tbody = document.getElementById('tbody'); if(tbody) tbody.innerHTML = '';
-            showOverlay('Starting tests...');
-            try{
-                const res = await postJSON('/run',{baseUrl});
-                if(!res.ok){ alert(res.message||'Unable to start'); btn.disabled=false; return; }
+            
+            // Show chart loaders
+            const l1s = document.getElementById('loadStatus'); 
+            if(l1s) l1s.style.display = 'flex';
+            const l2s = document.getElementById('loadTypes'); 
+            if(l2s) l2s.style.display = 'flex';
+            
+            // Clear previous results
+            const resArea = document.getElementById('resultsArea'); 
+            if(resArea) resArea.style.display = 'none';
+            const tbody = document.getElementById('tbody'); 
+            if(tbody) tbody.innerHTML = '';
+            
+            // Show loading overlay
+            showOverlay(testMode === 'fast' ? 'Starting smoke tests...' : 'Starting full regression...');
+            
+            try {
+                const res = await postJSON('/run', {
+                    baseUrl,
+                    mode: testMode
+                });
+
+                if (!res.ok) { 
+                    alert(res.message || 'Unable to start tests'); 
+                    runBtn.disabled = false;
+                    runBtn.style.display = 'inline-block';
+                    cancelBtn.style.display = 'none';
+                    return; 
+                }
+
+                // Start status polling
                 pollStatus();
                 poller = setInterval(pollStatus, 1200);
-                // safety: if status doesn't change within 8s, re-enable
-                setTimeout(async ()=>{
-                    try{ const s = await getJSON('/status'); if(!s.running){ btn.disabled=false; } }catch(e){ btn.disabled=false; }
+
+                // Safety timeout to re-enable button if status doesn't change
+                setTimeout(async () => {
+                    try { 
+                        const s = await getJSON('/status'); 
+                        if (!s.running) {
+                            runBtn.disabled = false;
+                            runBtn.style.display = 'inline-block';
+                            cancelBtn.style.display = 'none';
+                        }
+                    } catch(e) {
+                        runBtn.disabled = false;
+                        runBtn.style.display = 'inline-block';
+                        cancelBtn.style.display = 'none';
+                    }
                 }, 8000);
-            }catch(err){
-                alert('Failed to start run');
-                btn.disabled=false;
-            } finally { hideOverlay(); }
+
+            } catch(err) {
+                console.error('Failed to start test run:', err);
+                alert('Failed to start test run. Please check your connection and try again.');
+                runBtn.disabled = false;
+                runBtn.style.display = 'inline-block';
+                cancelBtn.style.display = 'none';
+            } finally {
+                hideOverlay();
+            }
         }
         async function pollStatus(){
             const s = await getJSON('/status');
+            // Update progress bar
             document.querySelector('.bar').style.width = (s.progress||0)+'%';
             document.getElementById('progressText').textContent = (s.progress||0)+'%';
+            
+            // If fast mode, show indicator in progress text
+            if (s.mode === 'fast' && s.running) {
+                document.getElementById('progressText').textContent = `${s.progress||0}% (Fast Mode)`;
+            }
             const sum = s.summary||{};
             document.getElementById('kpiTotal').textContent = fmt(sum.total_tests);
             document.getElementById('kpiPass').textContent = fmt(sum.passed);
             document.getElementById('kpiFail').textContent = fmt(sum.failed);
             document.getElementById('kpiBugs').textContent = fmt(sum.bugs_found);
             // progress kpis
-            document.getElementById('kpiStatus').textContent = s.running ? 'Running' : (sum.total_tests ? 'Completed' : 'Idle');
+            
+            // Check for cancelled state
+            if (s.status === 'cancelled') {
+                document.getElementById('progressText').textContent = 'Cancelled';
+                document.getElementById('runBtn').disabled = false;
+                document.getElementById('cancelBtn').style.display = 'none';
+                document.getElementById('runBtn').style.display = 'inline-block';
+                if (poller) {
+                    clearInterval(poller);
+                    poller = null;
+                }
+                return;
+            }
+            
+            // Update status with fast mode indicator
+            const status = s.running 
+                ? (s.mode === 'fast' ? 'Running Smoke Tests' : 'Running Full Tests')
+                : (sum.total_tests ? 'Completed' : 'Idle');
+            document.getElementById('kpiStatus').textContent = status;
             document.getElementById('kpiQueued').textContent = s.running ? 0 : 0;
             document.getElementById('kpiEta').textContent = s.running ? 'Calculating…' : (sum.execution_time ? `${Math.round(sum.execution_time)}s` : '—');
             const logs = document.getElementById('logsBox'); if(logs && s.errors && s.errors.length){ logs.textContent = s.errors.join('\n'); }
@@ -417,6 +585,20 @@
             link.download = filename;
             link.click();
         }
+        async function cancelRun() {
+            try {
+                const response = await fetch('/cancel', {
+                    method: 'POST'
+                });
+                if (!response.ok) {
+                    alert('Failed to cancel test run');
+                }
+            } catch (err) {
+                console.error('Error cancelling tests:', err);
+                alert('Error cancelling tests');
+            }
+        }
+
         async function getTestedData(){
             if(window.__testedData) return window.__testedData;
             try{ const res = await getJSON('/tested-data'); if(res && res.ok){ window.__testedData = res.data||{}; } }catch(e){}
@@ -783,7 +965,32 @@
                         <!-- Downloads moved below progress and shown after run finishes -->
                     </div>
                     <div class="actions" style="flex-wrap:wrap">
+                        <div class="opts">
+                            <label title="Run only critical smoke tests">
+                                <div class="mode-selection">
+                                    <div class="radio-group">
+                                        <label title="Quick core tests">
+                                            <input type="radio" name="mode" value="fast" />
+                                            Fast
+                                        </label>
+                                        <label title="Essential smoke tests">
+                                            <input type="radio" name="mode" value="smoke" />
+                                            Smoke
+                                        </label>
+                                        <label title="Integration tests">
+                                            <input type="radio" name="mode" value="integration" />
+                                            Integration
+                                        </label>
+                                        <label title="Full test suite">
+                                            <input type="radio" name="mode" value="full" checked />
+                                            Full E2E
+                                        </label>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
                         <button id="runBtn" class="primary" title="Begin the selected test run" onclick="startRun()">Start Tests</button>
+                        <button id="cancelBtn" class="primary" title="Cancel the current test run" onclick="cancelRun()" style="display: none; background: var(--red);">Cancel Tests</button>
                         <button class="secondary" title="Refresh current status and data" aria-label="Refresh" onclick="pollStatus()">🔄</button>
                     </div>
                     <div class="section">
@@ -899,6 +1106,5 @@
     </footer>
 </body>
 </html>
-
 
 

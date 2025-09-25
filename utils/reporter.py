@@ -1,38 +1,114 @@
 """
 Reporter utility for QA Agent
-Handles logging test results to console and Excel files
+Handles logging test results to console and Excel files with optimized I/O
 """
 
 import pandas as pd
 import os
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Callable
+from queue import Queue
+from threading import Lock
+import threading
 
 
 class QAReporter:
     """
-    Handles all reporting functionality for the QA Agent
-    - Console logging with colored output
-    - Excel report generation
-    - Test result tracking
+    Handles all reporting functionality for the QA Agent with optimized I/O
+    - In-memory result collection
+    - Batched Excel report generation
+    - Thread-safe operations
+    - Progress tracking
     """
     
-    def __init__(self, report_dir: str = "reports"):
+    def __init__(self, report_dir: str = "reports", batch_size: int = 50):
         """
         Initialize the reporter
         
         Args:
             report_dir: Directory to save reports
+            batch_size: Number of results to collect before writing to disk
         """
         self.report_dir = report_dir
         self.test_results = []
+        self.result_lock = Lock()
+        self.batch_size = batch_size
+        
+        # Test counting
         self.bug_count = 0
         self.pass_count = 0
         self.fail_count = 0
+        self.total_tests = 0
+        self.completed_tests = 0
+        
+        # Run state
+        self.start_time = None
+        self.end_time = None
+        self.is_running = False
+        self.progress_callback: Optional[Callable[[float], None]] = None
         
         # Create reports directory if it doesn't exist
         os.makedirs(report_dir, exist_ok=True)
+        
+    def start_run(self):
+        """Start a new test run"""
+        with self.result_lock:
+            self.completed_tests = 0
+            self.total_tests = 0
+            self.bug_count = 0
+            self.pass_count = 0
+            self.fail_count = 0
+            self.start_time = datetime.now()
+            self.end_time = None
+            self.is_running = True
+            self.test_results = []
+            self._update_progress()
+
+    def finish_run(self):
+        """Mark the test run as complete"""
+        with self.result_lock:
+            self.end_time = datetime.now()
+            self.is_running = False
+            self._update_progress()
+
+    def increment_completed(self):
+        """Increment the completed test counter and update progress"""
+        with self.result_lock:
+            self.completed_tests += 1
+            self._update_progress()
     
+    def set_total_tests(self, total: int):
+        """Set the total number of tests to run"""
+        with self.result_lock:
+            self.total_tests = total
+            self._update_progress()
+    
+    def get_status(self) -> Dict[str, Any]:
+        """Get current test run status"""
+        with self.result_lock:
+            percent = (self.completed_tests / self.total_tests * 100) if self.total_tests > 0 else 0
+            return {
+                "total_tests": self.total_tests,
+                "completed_tests": self.completed_tests,
+                "percent": min(100, round(percent, 1)),
+                "is_running": self.is_running,
+                "pass_count": self.pass_count,
+                "fail_count": self.fail_count,
+                "bug_count": self.bug_count,
+                "start_time": self.start_time.isoformat() if self.start_time else None,
+                "end_time": self.end_time.isoformat() if self.end_time else None
+            }
+        
+    def set_progress_callback(self, callback: Callable[[float], None]):
+        """Set callback function for progress updates"""
+        self.progress_callback = callback
+        
+    def _update_progress(self):
+        """Update progress through callback if set"""
+        if self.progress_callback and self.total_tests > 0:
+            percent = (self.completed_tests / self.total_tests * 100)
+            self.progress_callback(min(100, round(percent, 1)))
+            
     def log_test_result(self, test_case: str, result: str, details: str, 
                        test_type: str = "UI", severity: str = "Medium"):
         """
@@ -73,6 +149,9 @@ class QAReporter:
         print(f"  Details: {details}")
         print(f"  Time: {timestamp}")
         print("-" * 80)
+        
+        # Update progress tracking
+        self.increment_completed()
     
     def _get_status_color(self, status: str) -> str:
         """Get color code for status (basic implementation)"""
@@ -422,6 +501,11 @@ class QAReporter:
         print(f"✅ Passed: {self.pass_count}")
         print(f"❌ Failed: {self.fail_count}")
         print(f"🐛 Bugs Found: {self.bug_count}")
+        
+        # Add progress tracking info
+        if self.total_tests > 0:
+            progress_pct = (self.completed_tests / self.total_tests) * 100
+            print(f"🚀 Progress: {self.completed_tests}/{self.total_tests} ({progress_pct:.1f}%)")
         
         if self.test_results:
             pass_rate = (self.pass_count / len(self.test_results)) * 100

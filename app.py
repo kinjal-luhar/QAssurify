@@ -26,48 +26,78 @@ def create_app() -> Flask:
         "results": [],
         "recommendations": [],
         "base_url": None,
+        "mode": "full",  # Track current test mode
     }
 
     # Background worker thread
     worker_thread: Optional[threading.Thread] = None
+    agent_instance: Optional[StrictQAAgent] = None
 
-    def run_agent(base_url: str, save_dir: Optional[str]):
+    def run_agent(base_url: str, save_dir: Optional[str], fast_mode: bool = False):
+        # Initialize state
         state["is_running"] = True
         state["progress"] = 0
         state["summary"] = None
         state["started_at"] = datetime.now()
         state["ended_at"] = None
         state["errors"].clear()
-        state["results"] = []  # ensure dashboard shows only current run
+        state["results"] = []
         state["recommendations"] = []
         state["base_url"] = base_url
+        state["mode"] = "fast" if fast_mode else "full"
+        state["cancel_requested"] = False
 
-        # Integrate a reporter that saves into chosen directory if provided
-        reporter = QAReporter(report_dir=save_dir or "reports")
-
+        # Set up report directory
+        report_dir = save_dir or "reports"
+        if fast_mode:
+            report_dir = os.path.join(report_dir, "fast_mode")
+            
         def on_progress(pct: int):
             state["progress"] = max(0, min(100, int(pct)))
 
-        agent = StrictQAAgent(base_url=base_url, progress_callback=on_progress)
-        # Inject our reporter so UI and CLI share logic
-        agent.reporter = reporter
-
         try:
-            summary = agent.run_all_tests()
-            state["summary"] = summary
-            state["results"] = list(reporter.test_results)
-            try:
-                # Best-effort: generate recommendations from reporter
-                state["recommendations"] = reporter._create_recommendations()
-            except Exception:
-                state["recommendations"] = []
-            # Build a readable filename for long-term history
-            safe_host = base_url.replace("http://", "").replace("https://", "").replace("/", "-")
-            date_str = datetime.now().strftime("%Y-%m-%d_%H%M")
-            fname = f"{safe_host}_qa_{date_str}_P{reporter.pass_count}_F{reporter.fail_count}_B{reporter.bug_count}.xlsx"
-            state["last_report_file"] = reporter.generate_excel_report(filename=fname, tested_host=safe_host)
+            # Create and configure reporter
+            reporter = QAReporter(report_dir=report_dir)
+            reporter.set_progress_callback(on_progress)
+            
+            # Create QA agent with proper parameters
+            nonlocal agent_instance
+            agent_instance = StrictQAAgent(
+                base_url=base_url,
+                mode="fast" if fast_mode else "full",
+                headless=True,  # Always run headless in web UI
+                reporter=reporter
+            )
+            
+            # Run tests and collect results
+            summary = agent_instance.run_all_tests()
+            
+            if not state["cancel_requested"]:
+                state["results"] = list(reporter.test_results)
+                state["summary"] = {
+                    "total_tests": reporter.total_tests,
+                    "passed": reporter.pass_count,
+                    "failed": reporter.fail_count,
+                    "bugs_found": reporter.bug_count,
+                    "execution_time": summary.get("execution_time", 0)
+                }
+                
+                # Generate recommendations if available
+                try:
+                    state["recommendations"] = reporter._create_recommendations()
+                except Exception:
+                    state["recommendations"] = []
+                
+                # Generate report file
+                safe_host = base_url.replace("http://", "").replace("https://", "").replace("/", "-")
+                date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+                mode_str = "_fast" if fast_mode else ""
+                fname = f"{safe_host}_qa{mode_str}_{date_str}_P{reporter.pass_count}_F{reporter.fail_count}_B{reporter.bug_count}.xlsx"
+                state["last_report_file"] = reporter.generate_excel_report(filename=fname, tested_host=safe_host)
+                
         except Exception as e:
             state["errors"].append(str(e))
+            
         finally:
             state["ended_at"] = datetime.now()
             state["progress"] = 100
@@ -91,44 +121,74 @@ def create_app() -> Flask:
         if state["is_running"]:
             return jsonify({"ok": False, "message": "A run is already in progress."}), 409
 
+        # Get request parameters with defaults
         data = request.get_json(silent=True) or {}
         base_url = data.get("baseUrl") or "http://127.0.0.1:8000"
         save_dir = data.get("saveDir")
+        
+        # Handle test mode parameter
+        test_mode = data.get("mode", "full").lower()
+        if test_mode not in ["fast", "full"]:
+            test_mode = "full"  # Default to full mode if invalid
+        fast_mode = (test_mode == "fast")
 
-        # Ensure save dir exists if provided
+        # Ensure save directory exists
         if save_dir:
             try:
                 os.makedirs(save_dir, exist_ok=True)
             except Exception as e:
                 return jsonify({"ok": False, "message": f"Cannot create save directory: {e}"}), 400
 
-        # Set immediate running state so the UI sees progress instantly
+        # Reset and initialize state
         state["is_running"] = True
         state["progress"] = 1
+        state["mode"] = test_mode
         state["summary"] = None
         state["errors"].clear()
         state["results"] = []
         state["started_at"] = datetime.now()
         state["ended_at"] = None
         state["base_url"] = base_url
+        state["cancel_requested"] = False
 
-        worker_thread = threading.Thread(target=run_agent, args=(base_url, save_dir), daemon=True)
+        # Start background worker
+        worker_thread = threading.Thread(target=run_agent, args=(base_url, save_dir, fast_mode), daemon=True)
         worker_thread.start()
         return jsonify({"ok": True})
 
     @app.route("/status")
     def status():
-        return jsonify({
-            "running": state["is_running"],
+        # Get agent status if it exists
+        agent_status = None
+        if agent_instance and agent_instance.reporter:
+            agent_status = agent_instance.reporter.get_status()
+
+        status_obj = {
+            "status": "cancelled" if state.get("cancel_requested", False) else 
+                     "running" if state["is_running"] else "idle",
+            "mode": state["mode"],
+            "total_tests": agent_status["total_tests"] if agent_status else 0,
+            "completed_tests": agent_status["completed_tests"] if agent_status else 0,
+            "percent": agent_status["percent"] if agent_status else 0,
             "progress": state["progress"],
             "summary": state["summary"],
-            "startedAt": state["started_at"].isoformat() if state["started_at"] else None,
-            "endedAt": state["ended_at"].isoformat() if state["ended_at"] else None,
+            "startedAt": agent_status["start_time"] if agent_status else 
+                        (state["started_at"].isoformat() if state["started_at"] else None),
+            "endedAt": agent_status["end_time"] if agent_status else 
+                      (state["ended_at"].isoformat() if state["ended_at"] else None),
             "errors": state["errors"],
             "lastReportFile": state["last_report_file"],
             "results": state["results"],
-            "recommendations": state["recommendations"],
-        })
+            "recommendations": state["recommendations"]
+        }
+        return jsonify(status_obj)
+
+    @app.route("/cancel", methods=["POST"])
+    def cancel():
+        state["cancel_requested"] = True
+        if agent_instance:
+            agent_instance.request_cancel()
+        return jsonify({"ok": True, "status": "cancelled"})
 
     @app.route("/reports")
     def list_reports():

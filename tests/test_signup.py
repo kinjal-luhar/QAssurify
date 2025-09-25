@@ -29,25 +29,44 @@ def run_tests(base_url: str, reporter, data_generator):
     driver = None
     try:
         # Setup Chrome driver with proper configuration
-        driver = get_driver(headless=True)
+        driver = get_driver()  # Let the fixture handle headless mode
         
         # Navigate to signup page
         signup_url = f"{base_url}/signup" if not base_url.endswith('/') else f"{base_url}signup"
         
-        # Test 1: Check if signup page loads
-        test_signup_page_loads(driver, signup_url, reporter)
+        # Run all test cases
+        test_cases = [
+            (test_signup_page_loads, "Test signup page loads"),
+            (test_required_fields_validation, "Test required field validation"),
+            (test_email_validation, "Test email format validation"),
+            (test_password_validation, "Test password validation"),
+            (test_successful_signup, "Test successful signup")
+        ]
         
-        # Test 2: Test required field validation
-        test_required_fields_validation(driver, signup_url, reporter, data_generator)
-        
-        # Test 3: Test email format validation
-        test_email_validation(driver, signup_url, reporter, data_generator)
-        
-        # Test 4: Test password validation
-        test_password_validation(driver, signup_url, reporter, data_generator)
-        
-        # Test 5: Test successful signup with valid data
-        test_successful_signup(driver, signup_url, reporter, data_generator)
+        for test_func, description in test_cases:
+            try:
+                if test_func == test_signup_page_loads:
+                    test_func(driver, signup_url, reporter)
+                else:
+                    test_func(driver, signup_url, reporter, data_generator)
+            except WebDriverException as e:
+                reporter.log_test_result(
+                    f"Signup - {description}",
+                    "FAIL",
+                    f"Browser error: {str(e)}",
+                    "UI",
+                    "High"
+                )
+                break  # Stop further tests if browser fails
+            except Exception as e:
+                reporter.log_test_result(
+                    f"Signup - {description}",
+                    "FAIL",
+                    f"Test error: {str(e)}",
+                    "UI",
+                    "Medium"
+                )
+                # Continue with next test
         
         # Test 6: Test edge cases and special characters
         test_edge_cases(driver, signup_url, reporter, data_generator)

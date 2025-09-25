@@ -4,64 +4,115 @@ Tests user authentication functionality including login form validation, credent
 """
 
 import time
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
+
+from utils.driver_setup import get_driver
 
 
 def run_tests(base_url: str, reporter, data_generator):
     """
-    Run all login tests
+    Run login tests for SauceDemo
     
     Args:
-        base_url: Base URL of the web application
+        base_url: Base URL of the web application (should be https://www.saucedemo.com)
         reporter: QAReporter instance for logging results
-        data_generator: TestDataGenerator instance for test data
+        data_generator: TestDataGenerator instance (not used as we use fixed credentials)
     """
-    print("🔑 Testing Login Functionality...")
+    print("🔑 Testing SauceDemo Login Functionality...")
     
     driver = None
     try:
-        # Setup Chrome driver
-        driver = setup_driver()
+        # Setup Chrome driver with proper configuration
+        driver = get_driver(headless=True)
+        wait = WebDriverWait(driver, 10)
         
-        # Navigate to login page
-        login_url = f"{base_url}/login" if not base_url.endswith('/') else f"{base_url}login"
+        # Test empty credentials first
+        test_empty_credentials(driver, base_url, reporter, wait)
         
-        # Test 1: Check if login page loads
-        test_login_page_loads(driver, login_url, reporter)
+        # Test invalid credentials
+        test_invalid_credentials(driver, base_url, reporter, wait)
         
-        # Test 2: Test login form validation
-        test_login_form_validation(driver, login_url, reporter, data_generator)
-        
-        # Test 3: Test invalid credentials
-        test_invalid_credentials(driver, login_url, reporter, data_generator)
-        
-        # Test 4: Test empty credentials
-        test_empty_credentials(driver, login_url, reporter)
-        
-        # Test 5: Test successful login (if valid credentials available)
-        test_successful_login(driver, login_url, reporter, data_generator)
-        
-        # Test 6: Test password visibility toggle
-        test_password_visibility_toggle(driver, login_url, reporter)
-        
-        # Test 7: Test remember me functionality
-        test_remember_me_functionality(driver, login_url, reporter)
-        
-        # Test 8: Test logout functionality
-        test_logout_functionality(driver, base_url, reporter)
-        
+        # Test successful login with valid credentials
+        try:
+            driver.get(base_url)
+            
+            # Wait for and fill in login form
+            username_field = wait.until(
+                EC.presence_of_element_located((By.ID, "user-name"))
+            )
+            password_field = wait.until(
+                EC.presence_of_element_located((By.ID, "password"))
+            )
+            login_button = wait.until(
+                EC.element_to_be_clickable((By.ID, "login-button"))
+            )
+            
+            username_field.send_keys("standard_user")
+            password_field.send_keys("secret_sauce")
+            login_button.click()
+            
+            # Verify successful login
+            inventory_list = wait.until(
+                EC.presence_of_element_located((By.CLASS_NAME, "inventory_list"))
+            )
+            
+            reporter.log_test_result(
+                "SauceDemo Login Test",
+                "PASS",
+                "Successfully logged in with standard_user credentials",
+                "Authentication",
+                "Low"
+            )
+            
+            # Test logout functionality
+            menu_button = wait.until(
+                EC.element_to_be_clickable((By.ID, "react-burger-menu-btn"))
+            )
+            menu_button.click()
+            
+            logout_link = wait.until(
+                EC.element_to_be_clickable((By.ID, "logout_sidebar_link"))
+            )
+            logout_link.click()
+            
+            # Verify we're back at login page
+            wait.until(
+                EC.presence_of_element_located((By.ID, "user-name"))
+            )
+            
+            reporter.log_test_result(
+                "SauceDemo Logout Test",
+                "PASS",
+                "Successfully logged out and returned to login page",
+                "Authentication",
+                "Low"
+            )
+            
+        except TimeoutException as e:
+            reporter.log_test_result(
+                "SauceDemo Login Test",
+                "FAIL",
+                f"Login failed - timeout waiting for elements: {str(e)}",
+                "Authentication",
+                "High"
+            )
+        except Exception as e:
+            reporter.log_test_result(
+                "SauceDemo Login Test",
+                "FAIL",
+                f"Login failed with unexpected error: {str(e)}",
+                "Authentication",
+                "High"
+            )
+            
     except Exception as e:
         reporter.log_test_result(
-            "Login Test Setup",
+            "SauceDemo Login Test Setup",
             "FAIL",
-            f"Failed to setup login tests: {e}",
+            f"Failed to setup or run login tests: {e}",
             "UI",
             "High"
         )
@@ -70,25 +121,7 @@ def run_tests(base_url: str, reporter, data_generator):
             driver.quit()
 
 
-def setup_driver():
-    """
-    Setup Chrome WebDriver with appropriate options
-    
-    Returns:
-        Configured WebDriver instance
-    """
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
-    
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.implicitly_wait(10)
-    
-    return driver
+# Remove the setup_driver function as we'll use get_driver directly
 
 
 def test_login_page_loads(driver, login_url, reporter):
@@ -143,188 +176,46 @@ def test_login_page_loads(driver, login_url, reporter):
         )
 
 
-def test_login_form_validation(driver, login_url, reporter, data_generator):
-    """
-    Test login form validation
-    
-    Args:
-        driver: WebDriver instance
-        login_url: URL of the login page
-        reporter: QAReporter instance
-        data_generator: TestDataGenerator instance
-    """
+def test_invalid_credentials(driver, base_url, reporter, wait):
+    """Test login with invalid credentials for SauceDemo"""
     try:
-        driver.get(login_url)
+        driver.get(base_url)
         
-        # Find login form fields
-        username_field = None
-        password_field = None
+        # Get form elements
+        username_field = wait.until(EC.presence_of_element_located((By.ID, "user-name")))
+        password_field = driver.find_element(By.ID, "password")
+        login_button = driver.find_element(By.ID, "login-button")
         
-        # Try different selectors for username/email field
-        username_selectors = [
-            "input[name='username']",
-            "input[name='email']",
-            "input[type='email']",
-            "#username",
-            "#email",
-            "input[placeholder*='username']",
-            "input[placeholder*='email']"
-        ]
+        # Try invalid credentials
+        username_field.send_keys("wrong_user")
+        password_field.send_keys("wrong_pass")
+        login_button.click()
         
-        for selector in username_selectors:
-            try:
-                username_field = driver.find_element(By.CSS_SELECTOR, selector)
-                break
-            except NoSuchElementException:
-                continue
-        
-        # Try different selectors for password field
-        password_selectors = [
-            "input[name='password']",
-            "input[type='password']",
-            "#password",
-            "input[placeholder*='password']"
-        ]
-        
-        for selector in password_selectors:
-            try:
-                password_field = driver.find_element(By.CSS_SELECTOR, selector)
-                break
-            except NoSuchElementException:
-                continue
-        
-        if not username_field or not password_field:
-            reporter.log_test_result(
-                "Login Form Fields Detection",
-                "BUG",
-                f"Login form fields not found. Username: {username_field is not None}, Password: {password_field is not None}",
-                "UI",
-                "High"
-            )
-            return
-        
-        # Test invalid email format
-        username_field.clear()
-        username_field.send_keys("invalid-email-format")
-        
-        # Try to submit form
-        submit_button = find_submit_button(driver)
-        if submit_button:
-            submit_button.click()
-            time.sleep(2)
-            
-            # Check for validation messages
-            validation_messages = driver.find_elements(By.CSS_SELECTOR,
-                ".error, .validation-error, .field-error, [class*='error'], [class*='invalid']")
-            
-            if validation_messages:
-                reporter.log_test_result(
-                    "Login Form Validation",
-                    "PASS",
-                    "Login form shows validation messages for invalid input",
-                    "Form",
-                    "Low"
-                )
-            else:
-                reporter.log_test_result(
-                    "Login Form Validation",
-                    "BUG",
-                    "Login form doesn't validate invalid email format",
-                    "Form",
-                    "High"
-                )
-        else:
-            reporter.log_test_result(
-                "Login Form Validation",
-                "BUG",
-                "No submit button found to test form validation",
-                "UI",
-                "Medium"
-            )
-            
-    except Exception as e:
-        reporter.log_test_result(
-            "Login Form Validation",
-            "FAIL",
-            f"Error testing login form validation: {e}",
-            "Form",
-            "High"
+        # Check for error message
+        error_message = wait.until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "[data-test='error']"))
         )
-
-
-def test_invalid_credentials(driver, login_url, reporter, data_generator):
-    """
-    Test login with invalid credentials
-    
-    Args:
-        driver: WebDriver instance
-        login_url: URL of the login page
-        reporter: QAReporter instance
-        data_generator: TestDataGenerator instance
-    """
-    try:
-        driver.get(login_url)
         
-        # Generate invalid login data
-        invalid_data = data_generator.generate_login_data(valid=False)
-        
-        # Fill login form with invalid data
-        username_field = find_username_field(driver)
-        password_field = find_password_field(driver)
-        
-        if username_field and password_field:
-            username_field.clear()
-            username_field.send_keys(invalid_data['username'])
-            
-            password_field.clear()
-            password_field.send_keys(invalid_data['password'])
-            
-            # Submit form
-            submit_button = find_submit_button(driver)
-            if submit_button:
-                submit_button.click()
-                time.sleep(3)
-                
-                # Check for error messages
-                error_messages = driver.find_elements(By.CSS_SELECTOR,
-                    ".error, .alert-error, .alert-danger, [class*='error'], [class*='invalid']")
-                
-                if error_messages:
-                    reporter.log_test_result(
-                        "Invalid Credentials Test",
-                        "PASS",
-                        f"Login form shows error message for invalid credentials: {error_messages[0].text[:100]}",
-                        "Security",
-                        "Low"
-                    )
-                else:
-                    reporter.log_test_result(
-                        "Invalid Credentials Test",
-                        "BUG",
-                        "Login form doesn't show error message for invalid credentials",
-                        "Security",
-                        "High"
-                    )
-            else:
-                reporter.log_test_result(
-                    "Invalid Credentials Test",
-                    "BUG",
-                    "No submit button found to test invalid credentials",
-                    "UI",
-                    "Medium"
-                )
+        if error_message and error_message.is_displayed():
+            reporter.log_test_result(
+                "SauceDemo Invalid Login",
+                "PASS",
+                f"Login correctly rejected invalid credentials: {error_message.text}",
+                "Security",
+                "Low"
+            )
         else:
             reporter.log_test_result(
-                "Invalid Credentials Test",
-                "BUG",
-                "Login form fields not found",
-                "UI",
+                "SauceDemo Invalid Login",
+                "FAIL",
+                "No error message shown for invalid credentials",
+                "Security",
                 "High"
             )
             
     except Exception as e:
         reporter.log_test_result(
-            "Invalid Credentials Test",
+            "SauceDemo Invalid Login",
             "FAIL",
             f"Error testing invalid credentials: {e}",
             "Security",
@@ -332,54 +223,42 @@ def test_invalid_credentials(driver, login_url, reporter, data_generator):
         )
 
 
-def test_empty_credentials(driver, login_url, reporter):
-    """
-    Test login with empty credentials
-    
-    Args:
-        driver: WebDriver instance
-        login_url: URL of the login page
-        reporter: QAReporter instance
-    """
+def test_empty_credentials(driver, base_url, reporter, wait):
+    """Test login with empty credentials for SauceDemo"""
     try:
-        driver.get(login_url)
+        driver.get(base_url)
         
-        # Submit form without filling any fields
-        submit_button = find_submit_button(driver)
-        if submit_button:
-            submit_button.click()
-            time.sleep(2)
-            
-            # Check if form prevents submission or shows validation
-            current_url = driver.current_url
-            if login_url in current_url:
-                reporter.log_test_result(
-                    "Empty Credentials Test",
-                    "PASS",
-                    "Login form prevents submission with empty credentials",
-                    "Form",
-                    "Low"
-                )
-            else:
-                reporter.log_test_result(
-                    "Empty Credentials Test",
-                    "BUG",
-                    "Login form allows submission with empty credentials",
-                    "Form",
-                    "High"
-                )
+        # Get login button and click without entering credentials
+        login_button = wait.until(
+            EC.presence_of_element_located((By.ID, "login-button"))
+        )
+        login_button.click()
+        
+        # Check for error message
+        error_message = wait.until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "[data-test='error']"))
+        )
+        
+        if error_message and "Username is required" in error_message.text:
+            reporter.log_test_result(
+                "SauceDemo Empty Login",
+                "PASS",
+                "Login correctly requires username field",
+                "Form",
+                "Low"
+            )
         else:
             reporter.log_test_result(
-                "Empty Credentials Test",
-                "BUG",
-                "No submit button found to test empty credentials",
-                "UI",
-                "Medium"
+                "SauceDemo Empty Login",
+                "FAIL",
+                "No validation message for empty credentials",
+                "Form",
+                "High"
             )
             
     except Exception as e:
         reporter.log_test_result(
-            "Empty Credentials Test",
+            "SauceDemo Empty Login",
             "FAIL",
             f"Error testing empty credentials: {e}",
             "Form",
@@ -387,376 +266,24 @@ def test_empty_credentials(driver, login_url, reporter):
         )
 
 
-def test_successful_login(driver, login_url, reporter, data_generator):
+def find_saucedemo_element(driver, element_id, wait_timeout=10):
     """
-    Test successful login (if valid credentials are available)
+    Helper function to find SauceDemo elements with proper waiting
     
     Args:
         driver: WebDriver instance
-        login_url: URL of the login page
-        reporter: QAReporter instance
-        data_generator: TestDataGenerator instance
+        element_id: The ID of the element to find
+        wait_timeout: How long to wait for element (seconds)
+        
+    Returns:
+        The found element or None if not found
     """
     try:
-        driver.get(login_url)
-        
-        # Generate valid login data (this would typically be from a test database)
-        valid_data = data_generator.generate_login_data(valid=True)
-        
-        # Fill login form
-        username_field = find_username_field(driver)
-        password_field = find_password_field(driver)
-        
-        if username_field and password_field:
-            username_field.clear()
-            username_field.send_keys(valid_data['username'])
-            
-            password_field.clear()
-            password_field.send_keys(valid_data['password'])
-            
-            # Submit form
-            submit_button = find_submit_button(driver)
-            if submit_button:
-                submit_button.click()
-                time.sleep(3)
-                
-                # Check for success indicators
-                current_url = driver.current_url
-                success_indicators = [
-                    'dashboard', 'profile', 'home', 'welcome', 'success'
-                ]
-                
-                if any(indicator in current_url.lower() for indicator in success_indicators):
-                    reporter.log_test_result(
-                        "Successful Login Test",
-                        "PASS",
-                        f"Login successful. Redirected to: {current_url}",
-                        "User Flow",
-                        "Low"
-                    )
-                else:
-                    # Check for error messages (credentials might be invalid)
-                    error_messages = driver.find_elements(By.CSS_SELECTOR,
-                        ".error, .alert-error, .alert-danger, [class*='error']")
-                    
-                    if error_messages:
-                        reporter.log_test_result(
-                            "Successful Login Test",
-                            "PASS",
-                            "Login form properly rejects invalid test credentials",
-                            "Security",
-                            "Low"
-                        )
-                    else:
-                        reporter.log_test_result(
-                            "Successful Login Test",
-                            "BUG",
-                            f"Login form submitted but no clear success/error indication. Current URL: {current_url}",
-                            "User Flow",
-                            "Medium"
-                        )
-            else:
-                reporter.log_test_result(
-                    "Successful Login Test",
-                    "BUG",
-                    "No submit button found to test login",
-                    "UI",
-                    "Medium"
-                )
-        else:
-            reporter.log_test_result(
-                "Successful Login Test",
-                "BUG",
-                "Login form fields not found",
-                "UI",
-                "High"
-            )
-            
-    except Exception as e:
-        reporter.log_test_result(
-            "Successful Login Test",
-            "FAIL",
-            f"Error testing successful login: {e}",
-            "User Flow",
-            "High"
+        wait = WebDriverWait(driver, wait_timeout)
+        return wait.until(
+            EC.presence_of_element_located((By.ID, element_id))
         )
-
-
-def test_password_visibility_toggle(driver, login_url, reporter):
-    """
-    Test password visibility toggle functionality
-    
-    Args:
-        driver: WebDriver instance
-        login_url: URL of the login page
-        reporter: QAReporter instance
-    """
-    try:
-        driver.get(login_url)
-        
-        password_field = find_password_field(driver)
-        if not password_field:
-            reporter.log_test_result(
-                "Password Visibility Toggle",
-                "BUG",
-                "Password field not found to test visibility toggle",
-                "UI",
-                "Medium"
-            )
-            return
-        
-        # Look for password visibility toggle button
-        toggle_selectors = [
-            "button[type='button']",
-            ".password-toggle",
-            ".show-password",
-            ".toggle-password",
-            "button:contains('Show')",
-            "button:contains('Hide')"
-        ]
-        
-        toggle_button = None
-        for selector in toggle_selectors:
-            try:
-                toggle_button = driver.find_element(By.CSS_SELECTOR, selector)
-                break
-            except NoSuchElementException:
-                continue
-        
-        if toggle_button:
-            # Test password visibility toggle
-            password_field.send_keys("testpassword")
-            initial_type = password_field.get_attribute('type')
-            
-            toggle_button.click()
-            time.sleep(1)
-            
-            new_type = password_field.get_attribute('type')
-            
-            if initial_type != new_type:
-                reporter.log_test_result(
-                    "Password Visibility Toggle",
-                    "PASS",
-                    f"Password visibility toggle works. Type changed from {initial_type} to {new_type}",
-                    "UI",
-                    "Low"
-                )
-            else:
-                reporter.log_test_result(
-                    "Password Visibility Toggle",
-                    "BUG",
-                    "Password visibility toggle doesn't change password field type",
-                    "UI",
-                    "Medium"
-                )
-        else:
-            reporter.log_test_result(
-                "Password Visibility Toggle",
-                "PASS",
-                "No password visibility toggle found (this is acceptable)",
-                "UI",
-                "Low"
-            )
-            
-    except Exception as e:
-        reporter.log_test_result(
-            "Password Visibility Toggle",
-            "FAIL",
-            f"Error testing password visibility toggle: {e}",
-            "UI",
-            "Medium"
-        )
-
-
-def test_remember_me_functionality(driver, login_url, reporter):
-    """
-    Test remember me checkbox functionality
-    
-    Args:
-        driver: WebDriver instance
-        login_url: URL of the login page
-        reporter: QAReporter instance
-    """
-    try:
-        driver.get(login_url)
-        
-        # Look for remember me checkbox
-        remember_me_selectors = [
-            "input[name='remember']",
-            "input[name='remember_me']",
-            "input[type='checkbox']",
-            "#remember",
-            "#remember_me",
-            "input[value='remember']"
-        ]
-        
-        remember_me_checkbox = None
-        for selector in remember_me_selectors:
-            try:
-                remember_me_checkbox = driver.find_element(By.CSS_SELECTOR, selector)
-                break
-            except NoSuchElementException:
-                continue
-        
-        if remember_me_checkbox:
-            # Test checkbox functionality
-            initial_state = remember_me_checkbox.is_selected()
-            remember_me_checkbox.click()
-            new_state = remember_me_checkbox.is_selected()
-            
-            if initial_state != new_state:
-                reporter.log_test_result(
-                    "Remember Me Functionality",
-                    "PASS",
-                    "Remember me checkbox toggles correctly",
-                    "UI",
-                    "Low"
-                )
-            else:
-                reporter.log_test_result(
-                    "Remember Me Functionality",
-                    "BUG",
-                    "Remember me checkbox doesn't toggle",
-                    "UI",
-                    "Medium"
-                )
-        else:
-            reporter.log_test_result(
-                "Remember Me Functionality",
-                "PASS",
-                "No remember me checkbox found (this is acceptable)",
-                "UI",
-                "Low"
-            )
-            
-    except Exception as e:
-        reporter.log_test_result(
-            "Remember Me Functionality",
-            "FAIL",
-            f"Error testing remember me functionality: {e}",
-            "UI",
-            "Medium"
-        )
-
-
-def test_logout_functionality(driver, base_url, reporter):
-    """
-    Test logout functionality
-    
-    Args:
-        driver: WebDriver instance
-        base_url: Base URL of the web application
-        reporter: QAReporter instance
-    """
-    try:
-        # Look for logout button/link
-        logout_selectors = [
-            "a[href*='logout']",
-            "button:contains('Logout')",
-            "button:contains('Sign Out')",
-            "a:contains('Logout')",
-            "a:contains('Sign Out')",
-            "#logout",
-            ".logout"
-        ]
-        
-        logout_element = None
-        for selector in logout_selectors:
-            try:
-                logout_element = driver.find_element(By.CSS_SELECTOR, selector)
-                break
-            except NoSuchElementException:
-                continue
-        
-        if logout_element:
-            logout_element.click()
-            time.sleep(2)
-            
-            # Check if redirected to login page or home page
-            current_url = driver.current_url
-            if 'login' in current_url.lower() or 'home' in current_url.lower():
-                reporter.log_test_result(
-                    "Logout Functionality",
-                    "PASS",
-                    f"Logout successful. Redirected to: {current_url}",
-                    "User Flow",
-                    "Low"
-                )
-            else:
-                reporter.log_test_result(
-                    "Logout Functionality",
-                    "BUG",
-                    f"Logout didn't redirect properly. Current URL: {current_url}",
-                    "User Flow",
-                    "High"
-                )
-        else:
-            reporter.log_test_result(
-                "Logout Functionality",
-                "PASS",
-                "No logout element found (this is acceptable if not logged in)",
-                "UI",
-                "Low"
-            )
-            
-    except Exception as e:
-        reporter.log_test_result(
-            "Logout Functionality",
-            "FAIL",
-            f"Error testing logout functionality: {e}",
-            "User Flow",
-            "Medium"
-        )
-
-
-def find_username_field(driver):
-    """Helper function to find username/email field"""
-    selectors = [
-        "input[name='username']",
-        "input[name='email']",
-        "input[type='email']",
-        "#username",
-        "#email"
-    ]
-    
-    for selector in selectors:
-        try:
-            return driver.find_element(By.CSS_SELECTOR, selector)
-        except NoSuchElementException:
-            continue
-    return None
-
-
-def find_password_field(driver):
-    """Helper function to find password field"""
-    selectors = [
-        "input[name='password']",
-        "input[type='password']",
-        "#password"
-    ]
-    
-    for selector in selectors:
-        try:
-            return driver.find_element(By.CSS_SELECTOR, selector)
-        except NoSuchElementException:
-            continue
-    return None
-
-
-def find_submit_button(driver):
-    """Helper function to find submit button"""
-    selectors = [
-        "button[type='submit']",
-        "input[type='submit']",
-        "button:contains('Login')",
-        "button:contains('Sign In')",
-        "#submit",
-        ".submit-btn"
-    ]
-    
-    for selector in selectors:
-        try:
-            return driver.find_element(By.CSS_SELECTOR, selector)
-        except NoSuchElementException:
-            continue
-    return None
+    except TimeoutException:
+        return None
+    except Exception:
+        return None

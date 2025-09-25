@@ -1,4 +1,4 @@
-#!/Users/ayuwat/Desktop/QAssurify/venv_py311/bin/python3.11
+#!/Users/ayuwat/Desktop/QAssurify/venv_py311/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

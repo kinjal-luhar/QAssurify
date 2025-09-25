@@ -1,18 +1,18 @@
 """
 Signup Form Tests
-Tests user registration functionality including form validation, required fields, and password rules
+Tests user registration functionality includin# Driver setup moved to utils/driver_setup.pyrequired fields, and password rules
 """
 
 import time
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
+
+from utils.driver_setup import get_driver
+
+from utils.driver_setup import get_driver
 
 
 def run_tests(base_url: str, reporter, data_generator):
@@ -28,8 +28,8 @@ def run_tests(base_url: str, reporter, data_generator):
     
     driver = None
     try:
-        # Setup Chrome driver
-        driver = setup_driver()
+        # Setup Chrome driver with proper configuration
+        driver = get_driver(headless=True)
         
         # Navigate to signup page
         signup_url = f"{base_url}/signup" if not base_url.endswith('/') else f"{base_url}signup"
@@ -68,25 +68,7 @@ def run_tests(base_url: str, reporter, data_generator):
             driver.quit()
 
 
-def setup_driver():
-    """
-    Setup Chrome WebDriver with appropriate options
-    
-    Returns:
-        Configured WebDriver instance
-    """
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Run in background
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
-    
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.implicitly_wait(10)
-    
-    return driver
+# Driver setup moved to utils/driver_setup.py
 
 
 def test_signup_page_loads(driver, signup_url, reporter):

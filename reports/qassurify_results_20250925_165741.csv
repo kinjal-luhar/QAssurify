@@ -1,0 +1,84 @@
+Test Case,Result,Details,Test Type,Severity,Timestamp
+Signup Page Loads,BUG,Signup page loaded but title doesn't indicate signup: Swag Labs,UI,Medium,2025-09-25 16:34:38
+Required Fields Detection,BUG,No common signup form fields found on the page,UI,High,2025-09-25 16:36:39
+Email Field Detection,BUG,No email field found on signup form,UI,High,2025-09-25 16:37:29
+Password Field Detection,BUG,No password field found on signup form,UI,High,2025-09-25 16:38:19
+Successful Signup Test,BUG,No form fields found to fill for signup test,UI,High,2025-09-25 16:40:20
+Form Submission Validation,FAIL,"Error testing form submission validation: Message: invalid selector: An invalid or illegal selector was specified
+  (Session info: chrome=140.0.7339.187); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidselectorexception
+Stacktrace:
+0   chromedriver                        0x0000000104cbf274 cxxbridge1$str$ptr + 2882596
+1   chromedriver                        0x0000000104cb71a0 cxxbridge1$str$ptr + 2849616
+2   chromedriver                        0x00000001047e1180 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 73420
+3   chromedriver                        0x00000001047e6e38 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 97156
+4   chromedriver                        0x00000001047e917c _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 106184
+5   chromedriver                        0x00000001047e9224 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 106352
+6   chromedriver                        0x0000000104828094 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 364000
+7   chromedriver                        0x00000001048696c8 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 631828
+8   chromedriver                        0x000000010481c188 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 315092
+9   chromedriver                        0x0000000104c82c54 cxxbridge1$str$ptr + 2635268
+10  chromedriver                        0x0000000104c85e6c cxxbridge1$str$ptr + 2648092
+11  chromedriver                        0x0000000104c645d4 cxxbridge1$str$ptr + 2510724
+12  chromedriver                        0x0000000104c86718 cxxbridge1$str$ptr + 2650312
+13  chromedriver                        0x0000000104c55d7c cxxbridge1$str$ptr + 2451244
+14  chromedriver                        0x0000000104ca5dd4 cxxbridge1$str$ptr + 2779012
+15  chromedriver                        0x0000000104ca5f54 cxxbridge1$str$ptr + 2779396
+16  chromedriver                        0x0000000104cb6dec cxxbridge1$str$ptr + 2848668
+17  libsystem_pthread.dylib             0x0000000189fefbc8 _pthread_start + 136
+18  libsystem_pthread.dylib             0x0000000189feab80 thread_start + 8
+",Form,High,2025-09-25 16:41:10
+SauceDemo Empty Login,PASS,Login correctly requires username field,Form,Low,2025-09-25 16:41:13
+SauceDemo Invalid Login,PASS,Login correctly rejected invalid credentials: Epic sadface: Username and password do not match any user in this service,Security,Low,2025-09-25 16:41:13
+SauceDemo Login Test,PASS,Successfully logged in with standard_user credentials,Authentication,Low,2025-09-25 16:41:19
+SauceDemo Login Test,FAIL,"Login failed - timeout waiting for elements: Message: 
+",Authentication,High,2025-09-25 16:41:29
+Homepage Navigation,PASS,Homepage loaded successfully. Title: Swag Labs,Navigation,Low,2025-09-25 16:41:33
+Homepage Content,BUG,Homepage missing essential elements. Found only: ,UI,Medium,2025-09-25 16:43:13
+Main Navigation Menu,BUG,No main navigation menu found on the page,UI,High,2025-09-25 16:44:44
+Footer Links,PASS,No footer found (this is acceptable),UI,Low,2025-09-25 16:45:24
+Internal Links,BUG,No internal links found on the page,Navigation,Medium,2025-09-25 16:45:34
+Broken Links,PASS,No broken links found in tested links,Navigation,Low,2025-09-25 16:45:44
+Browser Navigation,PASS,No links found to test browser navigation (this is acceptable),Navigation,Low,2025-09-25 16:45:54
+Responsive Navigation,BUG,No navigation elements found in mobile view,UI,Medium,2025-09-25 16:46:17
+Breadcrumb Navigation,PASS,No breadcrumb navigation found (this is acceptable),UI,Low,2025-09-25 16:47:07
+Contact Form Detection,PASS,No contact form found (this is acceptable),UI,Low,2025-09-25 16:50:38
+Search Form Detection,PASS,No search form found (this is acceptable),UI,Low,2025-09-25 16:51:38
+Feedback Form Detection,PASS,No feedback form found (this is acceptable),UI,Low,2025-09-25 16:55:47
+Input Field Validation,PASS,"Input field validation works. 2 fields validated, 0 failed",Form,Low,2025-09-25 16:55:49
+Form Submission Handling,BUG,Form submission doesn't provide user feedback. 1 forms tested,Form,Medium,2025-09-25 16:56:03
+Form Accessibility,FAIL,"Error testing form accessibility: Message: no such element: Unable to locate element: {""method"":""css selector"",""selector"":""label[for='user-name']""}
+  (Session info: chrome=140.0.7339.187); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#nosuchelementexception
+Stacktrace:
+0   chromedriver                        0x0000000104fff274 cxxbridge1$str$ptr + 2882596
+1   chromedriver                        0x0000000104ff71a0 cxxbridge1$str$ptr + 2849616
+2   chromedriver                        0x0000000104b21180 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 73420
+3   chromedriver                        0x0000000104b684c4 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 365072
+4   chromedriver                        0x0000000104b5dd68 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 322228
+5   chromedriver                        0x0000000104ba96c8 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 631828
+6   chromedriver                        0x0000000104b5c188 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 315092
+7   chromedriver                        0x0000000104fc2c54 cxxbridge1$str$ptr + 2635268
+8   chromedriver                        0x0000000104fc5e6c cxxbridge1$str$ptr + 2648092
+9   chromedriver                        0x0000000104fa45d4 cxxbridge1$str$ptr + 2510724
+10  chromedriver                        0x0000000104fc6718 cxxbridge1$str$ptr + 2650312
+11  chromedriver                        0x0000000104f95d7c cxxbridge1$str$ptr + 2451244
+12  chromedriver                        0x0000000104fe5dd4 cxxbridge1$str$ptr + 2779012
+13  chromedriver                        0x0000000104fe5f54 cxxbridge1$str$ptr + 2779396
+14  chromedriver                        0x0000000104ff6dec cxxbridge1$str$ptr + 2848668
+15  libsystem_pthread.dylib             0x0000000189fefbc8 _pthread_start + 136
+16  libsystem_pthread.dylib             0x0000000189feab80 thread_start + 8
+",Accessibility,Medium,2025-09-25 16:56:13
+Form Security,BUG,Form security issues found: Form missing CSRF protection token,Security,High,2025-09-25 16:56:23
+Form Error Handling,PASS,Form error handling works. 1/1 forms show proper error messages,Form,Low,2025-09-25 16:56:25
+API Discovery,BUG,No API endpoints discovered. This might indicate missing API documentation or endpoints.,API,Medium,2025-09-25 16:56:32
+API User Endpoints,BUG,No user-related API endpoints found or accessible,API,Medium,2025-09-25 16:56:36
+API Response Validation,PASS,No API endpoints found to test response validation,API,Low,2025-09-25 16:56:37
+API Error Handling,PASS,API returns 404 for non-existent endpoint,API,Low,2025-09-25 16:56:37
+API Method Validation,PASS,API returns appropriate status code 405 for invalid method,API,Low,2025-09-25 16:56:37
+API CORS Headers,PASS,API includes CORS headers,Security,Low,2025-09-25 16:56:37
+API Security Headers,BUG,API missing security headers,Security,Medium,2025-09-25 16:56:37
+API HTTPS,PASS,API uses HTTPS,Security,Low,2025-09-25 16:56:37
+API Performance,PASS,"API response time is good. Average: 0.09s, Max: 0.13s",Performance,Low,2025-09-25 16:56:38
+API Authentication,PASS,No protected endpoints found to test authentication,Security,Low,2025-09-25 16:56:39
+API Login Validation,PASS,No login endpoints found to test authentication,Security,Low,2025-09-25 16:56:40
+API Data Validation,PASS,API endpoint /api/users doesn't accept POST (405),API,Low,2025-09-25 16:56:40
+API JSON Validation,BUG,API doesn't properly validate malformed JSON (status 405),API,Medium,2025-09-25 16:56:40

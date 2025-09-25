@@ -1,0 +1,18 @@
+Test Case,Result,Details,Test Type,Severity,Timestamp
+Signup Test Setup,FAIL,Failed to setup signup tests: [Errno 8] Exec format error: '/Users/ayuwat/.wdm/drivers/chromedriver/mac64/140.0.7339.207/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver',UI,High,2025-09-25 15:25:41
+Login Test Setup,FAIL,Failed to setup login tests: [Errno 8] Exec format error: '/Users/ayuwat/.wdm/drivers/chromedriver/mac64/140.0.7339.207/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver',UI,High,2025-09-25 15:25:42
+Navigation Test Setup,FAIL,Failed to setup navigation tests: [Errno 8] Exec format error: '/Users/ayuwat/.wdm/drivers/chromedriver/mac64/140.0.7339.207/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver',UI,High,2025-09-25 15:25:44
+Form Test Setup,FAIL,Failed to setup form tests: [Errno 8] Exec format error: '/Users/ayuwat/.wdm/drivers/chromedriver/mac64/140.0.7339.207/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver',UI,High,2025-09-25 15:25:45
+API Discovery,BUG,No API endpoints discovered. This might indicate missing API documentation or endpoints.,API,Medium,2025-09-25 15:25:45
+API User Endpoints,BUG,No user-related API endpoints found or accessible,API,Medium,2025-09-25 15:25:46
+API Response Validation,PASS,No API endpoints found to test response validation,API,Low,2025-09-25 15:25:46
+API Error Handling,PASS,API returns 404 for non-existent endpoint,API,Low,2025-09-25 15:25:46
+API Method Validation,BUG,API returns unexpected status code 404 for invalid method,API,Medium,2025-09-25 15:25:46
+API CORS Headers,BUG,API missing CORS headers,Security,Medium,2025-09-25 15:25:46
+API Security Headers,BUG,API missing security headers,Security,Medium,2025-09-25 15:25:46
+API HTTPS,BUG,API doesn't use HTTPS,Security,High,2025-09-25 15:25:46
+API Performance,PASS,"API response time is good. Average: 0.04s, Max: 0.04s",Performance,Low,2025-09-25 15:25:46
+API Authentication,PASS,No protected endpoints found to test authentication,Security,Low,2025-09-25 15:25:46
+API Login Validation,PASS,No login endpoints found to test authentication,Security,Low,2025-09-25 15:25:46
+API Data Validation,PASS,No POST endpoints found to test data validation,API,Low,2025-09-25 15:25:47
+API JSON Validation,BUG,API doesn't properly validate malformed JSON (status 404),API,Medium,2025-09-25 15:25:47

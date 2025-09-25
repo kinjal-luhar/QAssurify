@@ -1,13 +1,12 @@
 import os
 import threading
-import queue
-import time
 from datetime import datetime
 from typing import Dict, Any, Optional
 
 from flask import Flask, render_template, request, jsonify, send_file
 
 from main import StrictQAAgent
+from main import _normalize_base_url
 from utils.reporter import QAReporter
 
 
@@ -51,6 +50,16 @@ def create_app() -> Flask:
         agent = StrictQAAgent(base_url=base_url, progress_callback=on_progress)
         # Inject our reporter so UI and CLI share logic
         agent.reporter = reporter
+        # Apply strategy if provided by UI
+        try:
+            strat = state.get("strategy") or {}
+            agent.configure_suite(
+                test_type=strat.get("test_type", "e2e"),
+                include_api=bool(strat.get("include_api", True)),
+                include_security=bool(strat.get("include_security", False)),
+            )
+        except Exception:
+            pass
 
         try:
             summary = agent.run_all_tests()
@@ -92,7 +101,10 @@ def create_app() -> Flask:
             return jsonify({"ok": False, "message": "A run is already in progress."}), 409
 
         data = request.get_json(silent=True) or {}
-        base_url = data.get("baseUrl") or "http://127.0.0.1:8000"
+        base_url = _normalize_base_url(data.get("baseUrl") or "http://127.0.0.1:8000")
+        test_type = (data.get("testType") or "e2e").lower()
+        include_api = bool(data.get("includeApi", True))
+        include_security = bool(data.get("includeSecurity", False))
         save_dir = data.get("saveDir")
 
         # Ensure save dir exists if provided
@@ -112,6 +124,12 @@ def create_app() -> Flask:
         state["ended_at"] = None
         state["base_url"] = base_url
 
+        # Attach chosen strategy to state so runner can pick modules accordingly
+        state["strategy"] = {
+            "test_type": test_type,
+            "include_api": include_api,
+            "include_security": include_security,
+        }
         worker_thread = threading.Thread(target=run_agent, args=(base_url, save_dir), daemon=True)
         worker_thread.start()
         return jsonify({"ok": True})

@@ -5,32 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>QAssurify — QA Control Center</title>
     <link rel="stylesheet" href="/static/css/qassurify.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' ry='10' fill='%23E43636'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='28' fill='white'%3EQA%3C/text%3E%3C/svg%3E" />
     <style>
         :root{
-            --red:#E43636;--cream:#F6EFD2;--beige:#E2DDB4;--black:#000;
+            --red:#0d6efd; --cream:#F6FAFF; --beige:#E5EEF9; --black:#0f172a;
+            --text:#0f172a; --text-muted:#475569; --surface:#ffffff; --border:#E5EEF9; --accent:#0d6efd; --accent-contrast:#ffffff;
+            --accent-neon:#00E0FF; --accent-magenta:#D946EF; --accent-purple:#7C3AED; --accent-purple-2:#A855F7;
+            --pass:#16a34a; --fail:#dc2626; --bug:#ca8a04;
+        }
+        body.dark:root, body.dark{
+            /* Futuristic palette */
+            --cream:#0B0E1A; --beige:#111827; --black:#FFFFFF;
+            --text:#FFFFFF; --text-muted:#D1D5DB; --surface:#0F1424; --border:#1F2937; --accent:#00E0FF; --accent-contrast:#0B0E1A;
+            --accent-neon:#00E0FF; --accent-magenta:#D946EF; --accent-purple:#7C3AED; --accent-purple-2:#A855F7;
+            --pass:#34d399; --fail:#f87171; --bug:#fbbf24;
+        }
+        body.dark:root, body.dark{
+            --red:#66b2ff;--cream:#0b1220;--beige:#243148;--black:#f5f7fa;
         }
         html, body{width:100%}
         body{
             background:
-                radial-gradient(1200px 600px at 100% -20%, rgba(228,54,54,.06), transparent 60%),
-                radial-gradient(900px 500px at -10% 110%, rgba(226,221,180,.25), transparent 60%),
+                radial-gradient(1200px 600px at 100% -20%, rgba(13,110,253,.06), transparent 60%),
+                radial-gradient(900px 500px at -10% 110%, rgba(229,238,249,.25), transparent 60%),
                 linear-gradient(180deg, var(--cream), #fff);
-            color:var(--black);
+            color:var(--text);
             font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
             margin:0;overflow-x:hidden
+        }
+        body.dark{
+            background:
+                radial-gradient(1200px 600px at 100% -20%, rgba(217,70,239,.08), transparent 60%),
+                radial-gradient(900px 500px at -10% 110%, rgba(124,58,237,.15), transparent 60%),
+                linear-gradient(180deg, #0B0E1A, #111827);
         }
         .container{width:min(100vw,1400px);margin-inline:auto;padding:12px 40px}
         @media(min-width:1280px){.container{padding:12px 56px}}
         /* Pinned side navigation */
-        .side-nav{position:fixed;top:60px;left:0;height:calc(100vh - 60px);width:220px;background:#fff;border-right:1px solid var(--beige);box-shadow:0 6px 20px rgba(0,0,0,.06);padding:12px;border-top-right-radius:12px;border-bottom-right-radius:12px;z-index:5;transform:translateX(0);transition:transform .28s ease}
+        .side-nav{position:fixed;top:60px;left:0;height:calc(100vh - 60px);width:220px;background:var(--surface);border-right:1px solid var(--border);box-shadow:0 6px 20px rgba(0,0,0,.06);padding:12px;border-top-right-radius:12px;border-bottom-right-radius:12px;z-index:5;transform:translateX(0);transition:transform .28s ease}
         .side-nav.collapsed{transform:translateX(-230px)}
         .side-nav .toggle{position:absolute;right:-14px;top:10px;background:#fff;border:1px solid var(--beige);border-radius:20px;padding:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}
         .side-nav h4{margin:6px 0 10px 0;font-size:12px;color:#555;text-transform:uppercase;letter-spacing:.04em}
-        .side-nav a{display:block;padding:8px 10px;border-radius:10px;color:#000;text-decoration:none;font-size:13px;border:1px solid transparent}
-        .side-nav a:hover{background:#faf8ef;border-color:var(--beige)}
+        .side-nav a{display:block;padding:8px 10px;border-radius:10px;color:var(--text);text-decoration:none;font-size:13px;border:1px solid transparent}
+        .side-nav a:hover{background:rgba(13,110,253,.08);border-color:var(--border)}
         .side-nav hr{border:none;border-top:1px dashed var(--beige);margin:10px 0}
         .side-nav .sub{padding-left:10px}
         .with-sidenav{padding-left:250px;transition:padding-left .28s ease}
@@ -38,78 +59,85 @@
         @media(max-width:960px){.side-nav{top:56px;width:200px}.with-sidenav{padding-left:0}.side-nav.collapsed{transform:translateX(-200px)}}
         header{position:sticky;top:0;z-index:10;background:var(--cream);display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px}
         .brand{display:flex;gap:12px;align-items:center;flex:1;min-width:0}
-        .logo{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--red),#b32020);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+        .logo{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#5a9bfd);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
         .title{font-size:20px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         /* Header hamburger */
         .hamburger-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid var(--beige);border-radius:10px;background:#fff;cursor:pointer;margin-right:10px}
-        .hamburger-btn:hover{background:#faf8ef}
+        .hamburger-btn:hover{background:rgba(13,110,253,.08)}
         .hamburger-lines{display:inline-block;width:16px}
         .hamburger-lines span{display:block;height:2px;background:#000;margin:3px 0;border-radius:2px}
         .grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start}
         .grid.single{grid-template-columns:1fr;justify-items:center}
         @media(max-width:960px){.grid{grid-template-columns:1fr}}
-        @media(max-width:960px){.grid{grid-template-columns:1fr}}
-        .card{background:#fff;border:1px solid var(--beige);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
-        .card h3{margin:0;padding:12px;border-bottom:1px solid var(--beige);font-size:16px}
+        .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+        body.dark .card{box-shadow:0 8px 28px rgba(0,0,0,.35)}
+        .card h3{margin:0;padding:12px;border-bottom:1px solid var(--border);font-size:16px;color:var(--text)}
         .card .body{padding:10px}
         .controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
         @media(min-width:900px){.controls{grid-template-columns:repeat(4,1fr)}}
         .opts{display:flex;gap:12px;align-items:center;flex-wrap:nowrap;white-space:nowrap}
         .opts label{display:flex;gap:6px;align-items:center}
-        .controls label{font-size:12px;color:#333}
-        .controls input{width:100%;padding:10px 12px;border:1px solid var(--beige);border-radius:8px;background:#fff}
+        .controls label{font-size:12px;color:var(--text)}
+        .controls input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)}
         .actions{display:flex;gap:12px;margin-top:8px}
-        button.primary{background:var(--red);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
-        button.secondary{background:#fff;color:#000;border:1px solid var(--beige);border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
-        .muted{color:#555;font-size:12px}
-        .progress{height:10px;background:var(--beige);border-radius:999px;overflow:hidden}
-        .bar{height:100%;width:0;background:var(--red);transition:width .4s ease}
+        button.primary{background:var(--accent);color:var(--accent-contrast);border:none;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+        button.secondary{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+        body.dark button.secondary{background:#0f172a;color:var(--black);border-color:#263247}
+        .muted{color:var(--text-muted);font-size:12px}
+        .progress{height:10px;background:var(--border);border-radius:999px;overflow:hidden}
+        .bar{height:100%;width:0;background:var(--accent);transition:width .4s ease}
         .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-        .kpi{background:linear-gradient(180deg,#fff,#faf8ef);border:1px solid var(--beige);border-radius:12px;padding:12px}
-        .kpi .label{font-size:12px;color:#333}
+        .kpi{background:linear-gradient(180deg,var(--surface),#f3f6fb);border:1px solid var(--border);border-radius:12px;padding:12px}
+        body.dark .kpi{background:linear-gradient(180deg,#0f172a,#0b1220)}
+        .kpi .label{font-size:12px;color:var(--text-muted)}
         .kpi .value{font-size:22px;font-weight:800}
         .kpis-lite .kpi .value{font-weight:400}
         .section{margin-top:12px}
         .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
         @media(max-width:960px){.row{grid-template-columns:1fr}}
-        .placeholder{display:flex;align-items:center;justify-content:center;height:100%;min-height:280px;border:1px dashed var(--beige);border-radius:12px;background:#fff;color:#333}
+        .placeholder{display:flex;align-items:center;justify-content:center;height:100%;min-height:280px;border:1px dashed var(--border);border-radius:12px;background:var(--surface);color:var(--text)}
         .hero{display:none}
         .logs{background:#0b0b0b;color:#e5e5e5;border:1px solid #2a2a2a;border-radius:8px;padding:8px;max-height:200px;overflow:auto;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-size:12px}
-        .link{color:#000;text-decoration:none;border-bottom:1px dashed var(--beige)}
+        body.dark .logs{background:#0b0f1a;color:#dbeafe;border-color:#1e293b}
+        .link{color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--border)}
         .scroll{max-height:320px;overflow:auto}
         .charts{display:flex;gap:12px;align-items:flex-start;max-width:100%;margin:0 auto;overflow-x:auto;flex-wrap:nowrap}
         .chart-col{display:flex;flex-direction:column;flex:1 1 50%;min-width:520px}
-        .charts .chart-wrap{background:#fff;border:1px solid var(--beige);border-radius:10px;padding:8px;min-height:240px;display:flex;align-items:center;position:relative}
+        .charts .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px;min-height:240px;display:flex;align-items:center;position:relative}
+        body.dark .charts .chart-wrap{border-image: linear-gradient(90deg, var(--accent-neon), var(--accent-magenta)) 1}
         .charts canvas{width:100%!important;height:220px!important}
-        .chart-loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:repeating-linear-gradient( 45deg, rgba(226,221,180,.25), rgba(226,221,180,.25) 10px, rgba(255,255,255,.25) 10px, rgba(255,255,255,.25) 20px ); border-radius:10px}
+        .chart-loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg, rgba(13,110,253,.08), rgba(13,110,253,.08) 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px ); border-radius:10px}
         .chart-spinner{width:24px;height:24px;border:3px solid var(--beige);border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;background:transparent}
-        .legend{display:grid;grid-template-columns:1fr;gap:2px;margin-top:2px;font-size:10px;color:#333}
+        .legend{display:grid;grid-template-columns:1fr;gap:2px;margin-top:2px;font-size:10px;color:var(--text-muted)}
         .legend .item{display:flex;align-items:center;gap:8px}
         .legend .swatch{width:10px;height:10px;border-radius:2px;display:inline-block}
-        .callout{background:#fff;border:1px solid var(--beige);border-radius:10px;padding:10px;font-size:12px;color:#333}
+        body.dark .legend .swatch{box-shadow:0 0 6px rgba(0,224,255,.6)}
+        .callout{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:12px;color:var(--text)}
         .section-title{font-weight:700;margin:8px 0 4px 0}
         .tested-title{text-align:center}
         /* Nav button styling */
-        .nav-btn{display:inline-block;background:#fff;border:1px solid var(--beige);color:#000;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:600;margin-left:8px}
-        .nav-btn:hover{background:#faf8ef}
-        .nav-btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+        .nav-btn{display:inline-block;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:600;margin-left:8px}
+        .nav-btn:hover{background:rgba(13,110,253,.08)}
+        body.dark .nav-btn.primary{box-shadow:0 0 12px rgba(0,224,255,.35)}
+        .nav-btn.primary{background:var(--accent);color:var(--accent-contrast);border-color:var(--accent)}
         .top-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;white-space:nowrap}
         .kv-table{width:100%;border-collapse:collapse}
         .kv-table{table-layout:fixed}
         .kv-table td{border-bottom:1px solid var(--beige);padding:6px 8px;font-size:12px;word-break:break-word;white-space:normal}
         .kv-table td:first-child{width:180px;color:#333;font-weight:600}
         table{width:100%;border-collapse:collapse}
-        th,td{padding:10px;border-bottom:1px solid var(--beige);font-size:13px}
-        th{text-align:left;color:#333}
+        th,td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text)}
+        th{text-align:left;color:var(--text-muted)}
         .status{font-weight:700}
-        .PASS{color:#15803d}
-        .FAIL{color:#b91c1c}
-        .BUG{color:#a16207}
-        .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--beige);font-size:11px}
+        .PASS{color:var(--pass)}
+        .FAIL{color:var(--fail)}
+        .BUG{color:var(--bug)}
+        .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:11px;color:var(--text)}
         .file{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--beige)}
         .file a{color:#000;text-decoration:none}
         .hidden{display:none !important}
         .overlay{position:fixed;inset:0;background:rgba(0,0,0,.06);display:none;align-items:center;justify-content:center;z-index:9999}
+        body.dark .overlay{background:rgba(0,0,0,.35)}
         .loader{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--beige);padding:10px 14px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.08)}
         .spinner{width:22px;height:22px;border:3px solid var(--beige);border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite}
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -120,6 +148,13 @@
         #downloadsRow{display:none}
     </style>
     <script>
+        function setTheme(dark){
+            const body = document.body;
+            const btn = document.getElementById('themeBtn');
+            if(dark){ body.classList.add('dark'); localStorage.setItem('theme','dark'); if(btn){ btn.textContent = 'Light Mode'; } }
+            else { body.classList.remove('dark'); localStorage.setItem('theme','light'); if(btn){ btn.textContent = 'Dark Mode'; } }
+        }
+        function toggleTheme(){ setTheme(!document.body.classList.contains('dark')); }
         try { if (window.Chart && window.Chart.register) { Chart.register(ChartDataLabels); } } catch (e) {}
         const fmt = (n)=> new Intl.NumberFormat().format(n||0);
         async function postJSON(url, data){
@@ -140,6 +175,9 @@
             .replace(/'/g,'&#39;');
         async function startRun(){
             const baseUrl = document.getElementById('baseUrl').value.trim() || 'http://127.0.0.1:8000';
+            const testType = (document.getElementById('testType')?.value||'e2e');
+            const includeApi = !!document.getElementById('optApi')?.checked;
+            const includeSecurity = !!document.getElementById('optSecurity')?.checked;
             const btn = document.getElementById('runBtn');
             btn.disabled = true;
             // immediate visual feedback
@@ -152,7 +190,7 @@
             const tbody = document.getElementById('tbody'); if(tbody) tbody.innerHTML = '';
             showOverlay('Starting tests...');
             try{
-                const res = await postJSON('/run',{baseUrl});
+                const res = await postJSON('/run',{baseUrl, testType, includeApi, includeSecurity});
                 if(!res.ok){ alert(res.message||'Unable to start'); btn.disabled=false; return; }
                 pollStatus();
                 poller = setInterval(pollStatus, 1200);
@@ -197,7 +235,7 @@
                 const grid = document.querySelector('.grid');
                 if(grid) grid.classList.add('single');
                 const right = document.getElementById('emptyRight');
-                if(right) right.style.display = 'none';
+                if(right) right.remove && right.remove();
                 // auto-show Tested Data
                 const tdCard = document.getElementById('testedDataCard');
                 if(tdCard){ tdCard.style.display = 'block'; }
@@ -622,13 +660,15 @@
             if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); }
         }
         window.addEventListener('DOMContentLoaded',()=>{
+            // apply saved theme
+            try{ const saved = localStorage.getItem('theme'); setTheme(saved==='dark'); }catch(e){}
             refreshReports();
             const area = document.getElementById('resultsArea'); if(area) area.style.display = 'none';
             // default to single-column centered layout with equal side padding
             const grid = document.querySelector('.grid');
             if(grid) grid.classList.add('single');
             const right = document.getElementById('emptyRight');
-            if(right) right.style.display = 'none';
+            if(right) right.remove && right.remove();
 
             // Descriptions for select options
             const testTypeDesc = {
@@ -734,15 +774,16 @@
         <header>
             <div class="brand">
                 <button id="headerNavToggle" class="hamburger-btn" title="Show/Hide navigation" aria-label="Toggle navigation">
-                    <span class="hamburger-lines"><span></span><span></span><span></span></span>
+                    <i class="bi bi-list"></i>
                 </button>
-                <div class="logo">QA</div>
+                <div class="logo"><i class="bi bi-shield-check"></i></div>
                 <div class="title">QAssurify — Quality Assurance Command Center</div>
             </div>
             <nav class="top-actions">
-                <a href="/" class="nav-btn primary">Dashboard</a>
-                <a href="/history" class="nav-btn">History</a>
-                <a href="/insights" class="nav-btn">Insights</a>
+                <a href="/" class="nav-btn primary"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                <a href="/history" class="nav-btn"><i class="bi bi-clock-history"></i> History</a>
+                <a href="/insights" class="nav-btn"><i class="bi bi-lightbulb"></i> Insights</a>
+                <button id="themeBtn" class="secondary" onclick="toggleTheme()" title="Toggle dark mode"><i class="bi bi-moon-stars"></i> Dark Mode</button>
             </nav>
         </header>
 
@@ -783,8 +824,8 @@
                         <!-- Downloads moved below progress and shown after run finishes -->
                     </div>
                     <div class="actions" style="flex-wrap:wrap">
-                        <button id="runBtn" class="primary" title="Begin the selected test run" onclick="startRun()">Start Tests</button>
-                        <button class="secondary" title="Refresh current status and data" aria-label="Refresh" onclick="pollStatus()">🔄</button>
+                        <button id="runBtn" class="primary" title="Begin the selected test run" onclick="startRun()"><i class="bi bi-play-fill"></i> Start Tests</button>
+                        <button class="secondary" title="Refresh current status and data" aria-label="Refresh" onclick="pollStatus()"><i class="bi bi-arrow-repeat"></i></button>
                     </div>
                     <div class="section">
                         <div class="kpis kpis-lite" style="grid-template-columns:1fr 1fr 1fr">
@@ -818,13 +859,12 @@
                 </div>
             </div>
             <div>
-                <div id="emptyRight" class="placeholder">No results yet. Run your first test to see analytics here.</div>
             </div>
         </div>
 
         <div id="resultsArea" class="section" style="margin-top:12px; display:none">
             <div class="card" id="resultsOverview">
-                <h3 title="High-level visuals that summarize your selected results" style="display:flex;align-items:center;justify-content:space-between">Results Overview <span><button class="secondary" title="Download charts + summary" onclick="exportResultsOverview()">Download</button></span></h3>
+                <h3 title="High-level visuals that summarize your selected results" style="display:flex;align-items:center;justify-content:space-between">Results Overview <span><button class="secondary" title="Download charts + summary" onclick="exportResultsOverview()"><i class="bi bi-download"></i> Download</button></span></h3>
                 <div class="body">
                         <div class="callout" title="Quick explanation of what each chart shows">These visuals summarize the selected test results. The left chart shows the share of Passed, Failed, and Bugs. The right chart shows how many tests ran in each category (e.g., UI, API). Switch tabs below to focus the view.</div>
                         <div class="charts">
@@ -848,17 +888,17 @@
                             </div>
                         </div>
                         <div class="section tabs" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-                            <button id="tab-all" class="secondary" title="Show all results" onclick="setTab('all')">All</button>
-                            <button id="tab-passed" class="secondary" title="Show only passed tests" onclick="setTab('passed')">Passed</button>
-                            <button id="tab-failed" class="secondary" title="Show only failed tests" onclick="setTab('failed')">Failed</button>
-                            <button id="tab-bugs" class="secondary" title="Show only bugs" onclick="setTab('bugs')">Bugs</button>
-                            <button id="tab-weak" class="secondary" title="Show failures + bugs" onclick="setTab('weak')">Weak Areas</button>
+                            <button id="tab-all" class="secondary" title="Show all results" onclick="setTab('all')"><i class="bi bi-ui-checks-grid"></i> All</button>
+                            <button id="tab-passed" class="secondary" title="Show only passed tests" onclick="setTab('passed')"><i class="bi bi-check-circle"></i> Passed</button>
+                            <button id="tab-failed" class="secondary" title="Show only failed tests" onclick="setTab('failed')"><i class="bi bi-x-circle"></i> Failed</button>
+                            <button id="tab-bugs" class="secondary" title="Show only bugs" onclick="setTab('bugs')"><i class="bi bi-bug"></i> Bugs</button>
+                            <button id="tab-weak" class="secondary" title="Show failures + bugs" onclick="setTab('weak')"><i class="bi bi-exclamation-triangle"></i> Weak Areas</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="card" id="latestResults" style="margin-top:12px">
-                    <h3 title="The most recent individual test outcomes" style="display:flex;align-items:center;justify-content:space-between">Latest Results <span><button class="secondary" title="Download CSV" onclick="exportLatestResultsCSV()">CSV</button> <button class="secondary" title="Download Excel" onclick="exportLatestResultsExcel()">Excel</button></span></h3>
+                    <h3 title="The most recent individual test outcomes" style="display:flex;align-items:center;justify-content:space-between">Latest Results <span><button class="secondary" title="Download CSV" onclick="exportLatestResultsCSV()"><i class="bi bi-filetype-csv"></i> CSV</button> <button class="secondary" title="Download Excel" onclick="exportLatestResultsExcel()"><i class="bi bi-file-earmark-excel"></i> Excel</button></span></h3>
                     <div class="body">
                         <div class="scroll">
                             <table>
@@ -880,9 +920,9 @@
                 <!-- Tested Data moved below Latest Results -->
                 <div class="card" id="testedDataCard" style="margin-top:12px; display:none">
                     <h3 title="Representative examples of data used in tests" style="display:flex;align-items:center;justify-content:space-between">Tested Data <span>
-                        <button class="secondary" title="Download Tested Data JSON" onclick="exportTestedDataJSON()">JSON</button>
-                        <button class="secondary" title="Download Tested Data CSV" onclick="exportTestedDataCSV()">CSV</button>
-                        <button class="secondary" title="Download Tested Data Excel" onclick="exportTestedDataExcel()">Excel</button>
+                        <button class="secondary" title="Download Tested Data JSON" onclick="exportTestedDataJSON()"><i class="bi bi-filetype-json"></i> JSON</button>
+                        <button class="secondary" title="Download Tested Data CSV" onclick="exportTestedDataCSV()"><i class="bi bi-filetype-csv"></i> CSV</button>
+                        <button class="secondary" title="Download Tested Data Excel" onclick="exportTestedDataExcel()"><i class="bi bi-file-earmark-excel"></i> Excel</button>
                     </span></h3>
                     <div class="body">
                         <div id="testedDataWrap" class="callout" style="margin-top:0">
@@ -895,8 +935,9 @@
         </div>
     </div>
     <footer style="text-align:center; margin:16px 0; font-size:12px; color:#555">
-        © 2025 Kinjal Luhar • <a href="mailto:kinjal96luhar@gmail.com" class="link">kinjal96luhar@gmail.com</a>
+        © 2025 Quality Assurance <a href="mailto:hemanthreddyb858@gmail.com" class="link">Gmail: hemanthreddyb858@gmail.com</a>
     </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>
 

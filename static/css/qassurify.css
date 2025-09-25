@@ -1,12 +1,42 @@
-:root{--red:#E43636;--cream:#F6EFD2;--beige:#E2DDB4;--black:#000}
+:root{
+  --red:#0d6efd; /* primary */
+  --accent:#0d6efd;
+  --accent-contrast:#ffffff;
+  --cream:#F6FAFF;
+  --beige:#E5EEF9;
+  --black:#0f172a;
+  --text:#0f172a;
+  --text-muted:#475569;
+  --surface:#ffffff;
+  --border:#E5EEF9;
+}
+body.dark{
+  --cream:#0B0E1A; --beige:#111827; --black:#FFFFFF;
+  --text:#FFFFFF; --text-muted:#D1D5DB; --surface:#0F1424; --border:#1F2937; --accent:#00E0FF; --accent-contrast:#0B0E1A;
+}
 *{box-sizing:border-box}
-body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-
-/* Subtle festive accents */
-.accent-snow{background:radial-gradient(circle at 20% -10%, rgba(255,255,255,.7), transparent 40%),radial-gradient(circle at 80% -20%, rgba(255,255,255,.6), transparent 45%)}
-.accent-garland{position:relative}
-.accent-garland:before{content:"";position:absolute;left:0;right:0;top:-6px;height:3px;background:repeating-linear-gradient(90deg,var(--red) 0 10px,#0b7 10px 20px,#0b7 20px 30px,var(--red) 30px 40px);opacity:.15;border-radius:999px}
+body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:var(--cream)}
+/* Smooth hover and theme transitions */
+html,body,button,a,input,select,textarea,.card{transition:background-color .25s ease,color .25s ease,border-color .25s ease,box-shadow .25s ease}
 
 /* Utilities */
 .hidden{display:none}
+
+/* Buttons aligned with theme */
+.btn-primary, button.primary{background:var(--accent);color:var(--accent-contrast);border-color:var(--accent)}
+.btn-outline-secondary, button.secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+body.dark .btn-outline-secondary, body.dark button.secondary{background:#0f172a;color:var(--black);border-color:#263247}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+body.dark .card{box-shadow:0 8px 28px rgba(0,0,0,.35)}
+.card h3{margin:0;padding:12px;border-bottom:1px solid var(--border);font-size:16px;color:var(--text)}
+
+/* Links */
+a.link{color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--border)}
+
+/* Tables */
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text)}
+th{text-align:left;color:var(--text-muted)}
 

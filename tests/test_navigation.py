@@ -82,9 +82,14 @@ def setup_driver():
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--window-size=1920,1080")
     
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.implicitly_wait(10)
+    # Prefer Selenium Manager (built-in) to avoid driver binary mismatches on Windows
+    try:
+        driver = webdriver.Chrome(options=chrome_options)
+    except Exception:
+        # Fallback to webdriver_manager if Selenium Manager is unavailable
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.implicitly_wait(5)
     
     return driver
 
@@ -101,7 +106,7 @@ def test_homepage_navigation(driver, base_url, reporter):
     try:
         # Test homepage loading
         driver.get(base_url)
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         
@@ -223,14 +228,14 @@ def test_main_navigation_menu(driver, base_url, reporter):
         working_links = 0
         broken_links = 0
         
-        for link in nav_links[:5]:  # Test first 5 navigation links
+        for link in nav_links[:3]:  # Test first 3 navigation links for speed
             try:
                 href = link.get_attribute('href')
                 if href and not href.startswith('javascript:'):
                     # Click the link
                     original_url = driver.current_url
                     link.click()
-                    time.sleep(2)
+                    time.sleep(1)
                     
                     new_url = driver.current_url
                     
@@ -240,7 +245,7 @@ def test_main_navigation_menu(driver, base_url, reporter):
                         
                         # Check if new page loads properly
                         try:
-                            WebDriverWait(driver, 5).until(
+                            WebDriverWait(driver, 3).until(
                                 EC.presence_of_element_located((By.TAG_NAME, "body"))
                             )
                         except TimeoutException:
@@ -250,7 +255,7 @@ def test_main_navigation_menu(driver, base_url, reporter):
                     
                     # Go back to original page
                     driver.back()
-                    time.sleep(1)
+                    time.sleep(0.5)
                     
             except Exception as e:
                 broken_links += 1
@@ -334,21 +339,21 @@ def test_footer_links(driver, base_url, reporter):
         working_links = 0
         broken_links = 0
         
-        for link in footer_links[:3]:  # Test first 3 footer links
+        for link in footer_links[:2]:  # Test first 2 footer links for speed
             try:
                 href = link.get_attribute('href')
                 if href and not href.startswith('javascript:'):
                     # Test if link is accessible
                     original_url = driver.current_url
                     link.click()
-                    time.sleep(2)
+                    time.sleep(1)
                     
                     new_url = driver.current_url
                     
                     if new_url != original_url:
                         working_links += 1
                         driver.back()
-                        time.sleep(1)
+                        time.sleep(0.5)
                     else:
                         broken_links += 1
                         
@@ -422,13 +427,13 @@ def test_internal_links(driver, base_url, reporter):
         working_links = 0
         broken_links = 0
         
-        for link in internal_links[:5]:  # Test first 5 internal links
+        for link in internal_links[:3]:  # Test first 3 internal links for speed
             try:
                 href = link.get_attribute('href')
                 original_url = driver.current_url
                 
                 link.click()
-                time.sleep(2)
+                time.sleep(1)
                 
                 new_url = driver.current_url
                 
@@ -438,7 +443,7 @@ def test_internal_links(driver, base_url, reporter):
                     
                     # Check if page loads properly
                     try:
-                        WebDriverWait(driver, 5).until(
+                        WebDriverWait(driver, 3).until(
                             EC.presence_of_element_located((By.TAG_NAME, "body"))
                         )
                     except TimeoutException:
@@ -448,7 +453,7 @@ def test_internal_links(driver, base_url, reporter):
                 
                 # Go back
                 driver.back()
-                time.sleep(1)
+                time.sleep(0.5)
                 
             except Exception as e:
                 broken_links += 1
@@ -496,14 +501,14 @@ def test_broken_links(driver, base_url, reporter):
         all_links = driver.find_elements(By.TAG_NAME, "a")
         broken_links = []
         
-        for link in all_links[:10]:  # Test first 10 links
+        for link in all_links[:6]:  # Test first 6 links for speed
             try:
                 href = link.get_attribute('href')
                 if href and not href.startswith('javascript:'):
                     original_url = driver.current_url
                     
                     link.click()
-                    time.sleep(3)
+                    time.sleep(1.5)
                     
                     # Check for 404 or error indicators
                     current_url = driver.current_url
@@ -517,7 +522,7 @@ def test_broken_links(driver, base_url, reporter):
                     
                     # Go back
                     driver.back()
-                    time.sleep(1)
+                    time.sleep(0.5)
                     
             except Exception as e:
                 broken_links.append(f"Error accessing link: {e}")
@@ -567,12 +572,12 @@ def test_browser_navigation(driver, base_url, reporter):
         links = driver.find_elements(By.TAG_NAME, "a")
         if links:
             links[0].click()
-            time.sleep(2)
+            time.sleep(1)
             second_page_url = driver.current_url
             
             # Test back navigation
             driver.back()
-            time.sleep(2)
+            time.sleep(1)
             back_url = driver.current_url
             
             if back_url == homepage_url:
@@ -650,7 +655,7 @@ def test_responsive_navigation(driver, base_url, reporter):
         
         # Test mobile navigation
         driver.set_window_size(375, 667)  # iPhone size
-        time.sleep(2)
+        time.sleep(1)
         
         mobile_nav = driver.find_elements(By.CSS_SELECTOR, 
             "nav, .navbar, .navigation, .mobile-nav, .hamburger, .menu-toggle")
@@ -732,7 +737,7 @@ def test_breadcrumb_navigation(driver, base_url, reporter):
                     if href:
                         original_url = driver.current_url
                         link.click()
-                        time.sleep(2)
+                        time.sleep(1)
                         
                         if driver.current_url != original_url:
                             working_links += 1

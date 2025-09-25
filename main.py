@@ -17,6 +17,33 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from utils.reporter import QAReporter
 from utils.data_generator import TestDataGenerator
+from urllib.parse import urlparse
+
+
+def _normalize_base_url(raw_url: Optional[str]) -> str:
+    """
+    Normalize user-provided base URL inputs.
+    - Trims whitespace and surrounding quotes
+    - Removes accidental leading '@'
+    - Adds a default scheme (https) if missing
+    - Avoids trailing spaces
+    """
+    default_url = "http://127.0.0.1:8000"
+    if not raw_url:
+        return default_url
+    url = str(raw_url).strip().strip("'\"")
+    # Remove a single leading '@' if present (copy/paste artifact)
+    if url.startswith('@'):
+        url = url[1:]
+    # Add scheme if missing
+    parsed = urlparse(url)
+    if not parsed.scheme:
+        url = f"https://{url}"
+        parsed = urlparse(url)
+    # Basic sanity: require netloc after normalization
+    if not parsed.netloc:
+        return default_url
+    return url
 
 
 class StrictQAAgent:
@@ -31,7 +58,7 @@ class StrictQAAgent:
         Args:
             base_url: Base URL of the web application to test
         """
-        self.base_url = base_url
+        self.base_url = _normalize_base_url(base_url)
         self.reporter = QAReporter()
         self.data_generator = TestDataGenerator()
         self.start_time = None
@@ -39,7 +66,7 @@ class StrictQAAgent:
         self.stop_requested = False
         self.progress_callback = progress_callback
         
-        # Test modules to run
+        # Default test modules (full E2E)
         self.test_modules = [
             'tests.test_signup',
             'tests.test_login', 
@@ -47,6 +74,39 @@ class StrictQAAgent:
             'tests.test_forms',
             'tests.test_api'
         ]
+
+    def configure_suite(self, test_type: str = "e2e", include_api: bool = True, include_security: bool = False) -> None:
+        """
+        Configure which test modules to run based on requested strategy.
+        test_type: 'e2e' | 'smoke' | 'integration'
+        include_api: include API-related tests
+        include_security: currently piggybacks on forms/API suites (lightweight)
+        """
+        test_type = (test_type or "e2e").lower().strip()
+        modules_e2e = [
+            'tests.test_signup',
+            'tests.test_login',
+            'tests.test_navigation',
+            'tests.test_forms',
+        ]
+        modules_smoke = [
+            'tests.test_navigation',
+            'tests.test_forms',
+        ]
+        modules_integration = [
+            'tests.test_api',
+        ]
+        chosen: List[str]
+        if test_type == 'smoke':
+            chosen = modules_smoke[:]
+        elif test_type == 'integration':
+            chosen = modules_integration[:]
+        else:
+            chosen = modules_e2e[:]
+        if include_api and 'tests.test_api' not in chosen:
+            chosen.append('tests.test_api')
+        # Security flag can later toggle dedicated suites; for now it keeps defaults.
+        self.test_modules = chosen
     
     def run_all_tests(self) -> Dict[str, Any]:
         """
@@ -261,7 +321,7 @@ def main():
     # Get base URL from command line argument or use default
     base_url = "http://127.0.0.1:8000"
     if len(sys.argv) > 1:
-        base_url = sys.argv[1]
+        base_url = _normalize_base_url(sys.argv[1])
     
     # Create and run the QA Agent
     agent = StrictQAAgent(base_url)

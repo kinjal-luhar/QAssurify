@@ -10,6 +10,8 @@ A comprehensive, automated QA testing framework for web applications. You can ru
 - **Realistic Test Data**: Uses Faker library to generate realistic test data
 - **Multiple Test Suites**: Signup, Login, Navigation, Forms, and API testing
 - **Strict Validation**: Catches bugs that manual testing might miss
+- **Modern UI**: Bootstrap 5 styling, Bootstrap Icons, responsive layout, neon accents in dark mode
+- **Dark Mode**: One‑click toggle (Dark/Light) that preserves readability across charts, tables, and controls
 
 ## 📁 Project Structure
 
@@ -81,13 +83,14 @@ agent.run_specific_tests(['tests.test_signup', 'tests.test_login'])
 
 Start the Web UI and operate tests from a browser.
 
-```bashpy
+```bash
 # From the project root
 python app.py
 ```
 
 - UI will start at http://127.0.0.1:5000 (or http://localhost:5000)
 - In the UI, enter your Base URL (e.g., http://localhost:3000) and click Start Tests
+- Use the Dark Mode button in the header to toggle themes
 - Progress, charts, and results will appear when the run completes
 
 ### 4) View Results
@@ -246,20 +249,20 @@ def run_tests(base_url: str, reporter, data_generator):
 
 3. **Import Errors**
    - Run `pip install -r requirements.txt`
-   - Check Python version (3.7+ required)
+   - Check Python version (3.12+ recommended)
 
 4. **Permission Errors**
    - Ensure write permissions for `reports/` directory
    - Run with appropriate user permissions
 
-### Debug Mode
+### Git hygiene (when contributing)
 
-Enable debug mode by modifying `main.py`:
+If `git add .` seems to hang due to previously tracked large folders, untrack them and rely on `.gitignore`:
 
-```python
-# Add this to see more detailed output
-import logging
-logging.basicConfig(level=logging.DEBUG)
+```bash
+# from repo root
+git rm -r --cached venv QAssurify/venv QAssurify/reports QAssurify/qa_agent/reports || true
+git add .
 ```
 
 ## 📈 Best Practices
@@ -272,13 +275,21 @@ logging.basicConfig(level=logging.DEBUG)
 
 ## 🤝 Contributing
 
-To add new test types or improve existing ones:
+Basic workflow:
 
-1. Fork the repository
-2. Create a feature branch
-3. Add your tests following the existing pattern
-4. Update documentation
-5. Submit a pull request
+```bash
+# 1) Create a branch
+git checkout -b feat/short-description
+
+# 2) Make changes, commit
+git add .
+git commit -m "feat: short description of change"
+
+# 3) Push and open PR
+git push -u origin feat/short-description
+```
+
+Please include a brief description, screenshots (for UI), and what you tested.
 
 ## 📝 License
 

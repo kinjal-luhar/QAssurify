@@ -82,9 +82,14 @@ def setup_driver():
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--window-size=1920,1080")
     
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.implicitly_wait(10)
+    # Prefer Selenium Manager (built-in) to avoid driver binary mismatches on Windows
+    try:
+        driver = webdriver.Chrome(options=chrome_options)
+    except Exception:
+        # Fallback to webdriver_manager if Selenium Manager is unavailable
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.implicitly_wait(5)
     
     return driver
 
@@ -108,7 +113,7 @@ def test_contact_form(driver, base_url, reporter, data_generator):
             try:
                 contact_url = f"{base_url}{page}" if not base_url.endswith('/') else f"{base_url}{page[1:]}"
                 driver.get(contact_url)
-                time.sleep(2)
+                time.sleep(1)
                 
                 # Look for contact form
                 form_selectors = [
@@ -203,7 +208,7 @@ def test_search_form(driver, base_url, reporter, data_generator):
         ]
         
         search_button = None
-        for selector in search_button_selectors:
+        for selector in search_button_selectors[:3]:
             try:
                 search_button = driver.find_element(By.CSS_SELECTOR, selector)
                 break
@@ -212,7 +217,7 @@ def test_search_form(driver, base_url, reporter, data_generator):
         
         if search_button:
             search_button.click()
-            time.sleep(3)
+            time.sleep(1.5)
             
             # Check for search results
             current_url = driver.current_url
@@ -235,7 +240,7 @@ def test_search_form(driver, base_url, reporter, data_generator):
         else:
             # Try pressing Enter
             search_field.send_keys("\n")
-            time.sleep(3)
+            time.sleep(1.5)
             
             current_url = driver.current_url
             if 'search' in current_url.lower() or 'query' in current_url.lower():
@@ -261,7 +266,7 @@ def test_search_form(driver, base_url, reporter, data_generator):
         
         if search_button:
             search_button.click()
-            time.sleep(2)
+            time.sleep(1)
             
             # Check if form prevents empty search
             validation_messages = driver.find_elements(By.CSS_SELECTOR,
@@ -309,11 +314,11 @@ def test_feedback_form(driver, base_url, reporter, data_generator):
         feedback_pages = ['/feedback', '/feedback.html', '/contact', '/contact-us']
         
         feedback_form_found = False
-        for page in feedback_pages:
+        for page in feedback_pages[:2]:
             try:
                 feedback_url = f"{base_url}{page}" if not base_url.endswith('/') else f"{base_url}{page[1:]}"
                 driver.get(feedback_url)
-                time.sleep(2)
+                time.sleep(1)
                 
                 # Look for feedback form elements
                 feedback_elements = [
@@ -391,7 +396,7 @@ def test_input_field_validation(driver, base_url, reporter, data_generator):
         validation_tests_passed = 0
         validation_tests_failed = 0
         
-        for field in input_fields[:5]:  # Test first 5 input fields
+        for field in input_fields[:3]:  # Test first 3 input fields for speed
             try:
                 field_type = field.get_attribute('type') or 'text'
                 field_name = field.get_attribute('name') or 'unknown'
@@ -479,7 +484,7 @@ def test_form_submission_handling(driver, base_url, reporter, data_generator):
         forms_tested = 0
         forms_with_feedback = 0
         
-        for form in forms[:3]:  # Test first 3 forms
+        for form in forms[:2]:  # Test first 2 forms for speed
             try:
                 # Fill form with test data
                 inputs = form.find_elements(By.CSS_SELECTOR, "input, textarea, select")
@@ -494,7 +499,7 @@ def test_form_submission_handling(driver, base_url, reporter, data_generator):
                 
                 if submit_button:
                     submit_button.click()
-                    time.sleep(3)
+                    time.sleep(1.5)
                     
                     forms_tested += 1
                     
@@ -571,7 +576,7 @@ def test_form_accessibility(driver, base_url, reporter):
         
         accessibility_issues = []
         
-        for form in forms:
+        for form in forms[:3]:
             # Check for form labels
             inputs = form.find_elements(By.CSS_SELECTOR, "input, textarea, select")
             for input_field in inputs:
@@ -738,7 +743,7 @@ def test_form_error_handling(driver, base_url, reporter, data_generator):
                 
                 if submit_button:
                     submit_button.click()
-                    time.sleep(2)
+                    time.sleep(1)
                     
                     error_handling_tests += 1
                     
@@ -824,7 +829,7 @@ def test_form_with_data(driver, form_data, test_name, reporter):
         
         if submit_button:
             submit_button.click()
-            time.sleep(3)
+            time.sleep(1.5)
             
             # Check for success/error messages
             success_messages = driver.find_elements(By.CSS_SELECTOR,

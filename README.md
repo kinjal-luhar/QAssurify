@@ -81,7 +81,7 @@ agent.run_specific_tests(['tests.test_signup', 'tests.test_login'])
 
 Start the Web UI and operate tests from a browser.
 
-```bash
+```bashpy
 # From the project root
 python app.py
 ```
